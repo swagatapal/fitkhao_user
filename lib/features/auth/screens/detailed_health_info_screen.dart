@@ -1,0 +1,879 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
+import '../../../core/router/route_names.dart';
+import '../../../core/utils/responsive_utils.dart';
+import '../../../shared/widgets/primary_button.dart';
+import '../models/auth_state.dart';
+import '../providers/auth_provider.dart';
+
+class DetailedHealthInfoScreen extends ConsumerStatefulWidget {
+  const DetailedHealthInfoScreen({super.key});
+
+  @override
+  ConsumerState<DetailedHealthInfoScreen> createState() =>
+      _DetailedHealthInfoScreenState();
+}
+
+class _DetailedHealthInfoScreenState
+    extends ConsumerState<DetailedHealthInfoScreen> {
+  // Form fields
+  String _heightCm = '';
+  String _weightKg = '';
+  String _activityLevel = 'sedentary'; // sedentary, moderate, heavy
+  bool _doesExercise = true;
+  String _exerciseDaysPerWeek = '';
+  String _exerciseDurationHrs = '';
+  String _exerciseType = 'aerobic'; // aerobic, strength, flexibility
+
+  // Physiological conditions
+  final Set<String> _conditions = {};
+  String _otherConditions = '';
+
+  String _regularlyStatus =
+      'constipated'; // constipated, diarrhoeal, both, none
+
+  // Controllers
+  final TextEditingController _heightController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _daysController = TextEditingController();
+  final TextEditingController _durationController = TextEditingController();
+  final TextEditingController _otherConditionsController =
+      TextEditingController();
+
+  @override
+  void dispose() {
+    _heightController.dispose();
+    _weightController.dispose();
+    _daysController.dispose();
+    _durationController.dispose();
+    _otherConditionsController.dispose();
+    super.dispose();
+  }
+
+  bool get _isFormValid {
+    bool basicValid = _heightCm.isNotEmpty && _weightKg.isNotEmpty;
+
+    if (_doesExercise) {
+      return basicValid &&
+          _exerciseDaysPerWeek.isNotEmpty &&
+          _exerciseDurationHrs.isNotEmpty;
+    }
+
+    return basicValid;
+  }
+
+  Future<void> _handleSave() async {
+    if (!_isFormValid) return;
+
+    final authNotifier = ref.read(authProvider.notifier);
+
+    // Save detailed health information to provider
+    authNotifier.saveDetailedHealthInfo(
+      height: double.parse(_heightCm),
+      weight: double.parse(_weightKg),
+      physicalActivityLevel: _capitalize(_activityLevel),
+      doesExercise: _doesExercise,
+      exerciseDaysPerWeek: _doesExercise && _exerciseDaysPerWeek.isNotEmpty
+          ? int.parse(_exerciseDaysPerWeek)
+          : null,
+      exerciseDurationHours: _doesExercise && _exerciseDurationHrs.isNotEmpty
+          ? double.parse(_exerciseDurationHrs)
+          : null,
+      exerciseType: _capitalize(_exerciseType),
+      pregnancy: _conditions.contains('pregnancy'),
+      lactation: _conditions.contains('lactation'),
+      diabetes: _conditions.contains('diabetes'),
+      hypertension: _conditions.contains('hypertension'),
+      cardiacProblem: _conditions.contains('cardiac'),
+      kidneyDisease: _conditions.contains('kidney'),
+      liverRelatedProblem: _conditions.contains('liver'),
+      otherConditions: _conditions.contains('others') ? _otherConditions : '',
+      regularityStatus: _capitalize(_regularlyStatus),
+    );
+
+    // Call the complete registration API to update user info
+    final response = await authNotifier.completeRegistration();
+
+    if (response != null && mounted) {
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.message),
+          backgroundColor: AppColors.primaryGreen,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+
+      // Navigate to preferences saved screen
+      context.go(RouteNames.preferencesSaved);
+    }
+    // Error message will be shown via listener
+  }
+
+  // Extension helper for capitalizing strings
+  String _capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
+    // Listen for errors
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.errorMessage != null && next.errorMessage!.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: AppColors.errorColor,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    });
+
+    final spacing12 = context.responsiveSpacing(12.0);
+    final spacing16 = context.responsiveSpacing(16.0);
+    final spacing20 = context.responsiveSpacing(20.0);
+    final spacing24 = context.responsiveSpacing(24.0);
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // Main Column with Fixed Image and Scrollable Content
+          Column(
+            children: [
+              // Fixed Image Section at Top
+              _buildImageSection(),
+
+              //  SizedBox(height: 20,),
+              // Scrollable Content Below Image
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(spacing20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                       Text("Select type of Physical Activity", style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF2B292A),
+                        fontFamily: "Lato"
+                       ),),
+                       SizedBox(height: spacing12,),
+
+                      // Body Details Section
+                      _buildSectionTitle(AppStrings.bodyDetails),
+                      SizedBox(height: spacing12),
+                      _buildNumberField(
+                        label: AppStrings.heightInCms,
+                        controller: _heightController,
+                        onChanged: (value) => setState(() => _heightCm = value),
+                      ),
+                      SizedBox(height: spacing12),
+                      _buildNumberField(
+                        label: AppStrings.weightInKg,
+                        controller: _weightController,
+                        onChanged: (value) => setState(() => _weightKg = value),
+                      ),
+                      SizedBox(height: spacing16),
+
+                      // Physical Activity Section
+                      _buildSectionTitle(AppStrings.professionPhysicalWork),
+                      SizedBox(height: spacing16),
+                      _buildActivityOption(
+                        title: AppStrings.sedentary,
+                        description: AppStrings.sedentaryDesc,
+                        value: 'sedentary',
+                      ),
+                      SizedBox(height: spacing12),
+                      _buildActivityOption(
+                        title: AppStrings.moderate,
+                        description: AppStrings.moderateDesc,
+                        value: 'moderate',
+                      ),
+                      SizedBox(height: spacing12),
+                      _buildActivityOption(
+                        title: AppStrings.heavy,
+                        description: AppStrings.heavyDesc,
+                        value: 'heavy',
+                      ),
+                      SizedBox(height: spacing16),
+
+                      // Exercise Section
+                      _buildSectionTitle(AppStrings.exercise),
+                      SizedBox(height: spacing16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildExerciseToggle(
+                              label: AppStrings.iExercise,
+                              icon: Icons.fitness_center,
+                              isSelected: _doesExercise,
+                              onTap: () => setState(() => _doesExercise = true),
+                            ),
+                          ),
+                          SizedBox(width: spacing12),
+                          Expanded(
+                            child: _buildExerciseToggle(
+                              label: AppStrings.iDontExerciseShort,
+                              icon: Icons.event_busy,
+                              isSelected: !_doesExercise,
+                              onTap: () =>
+                                  setState(() => _doesExercise = false),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Exercise Details (shown only if exercises)
+                      if (_doesExercise) ...[
+                        SizedBox(height: spacing16),
+                        _buildNumberField(
+                          label: AppStrings.howManyDaysWeek,
+                          controller: _daysController,
+                          onChanged: (value) =>
+                              setState(() => _exerciseDaysPerWeek = value),
+                          maxValue: 7,
+                        ),
+                        SizedBox(height: spacing12),
+                        _buildNumberField(
+                          label: AppStrings.durationInHrs,
+                          controller: _durationController,
+                          onChanged: (value) =>
+                              setState(() => _exerciseDurationHrs = value),
+                          maxValue: 24,
+                        ),
+                        SizedBox(height: spacing16),
+                        _buildSectionTitle(AppStrings.typeOfExercise),
+                        SizedBox(height: spacing12),
+                        _buildExerciseTypeOption(
+                          title: AppStrings.aerobic,
+                          description: AppStrings.aerobicDesc,
+                          value: 'aerobic',
+                          icon: Icons.directions_run,
+                        ),
+                        SizedBox(height: spacing12),
+                        _buildExerciseTypeOption(
+                          title: AppStrings.strengthTraining,
+                          description: AppStrings.strengthTrainingDesc,
+                          value: 'strength',
+                          icon: Icons.fitness_center,
+                        ),
+                        SizedBox(height: spacing12),
+                        _buildExerciseTypeOption(
+                          title: AppStrings.flexibilityExercise,
+                          description: AppStrings.flexibilityExerciseDesc,
+                          value: 'flexibility',
+                          icon: Icons.self_improvement,
+                        ),
+                      ],
+
+                      SizedBox(height: spacing20),
+
+                      // Physiological Status Section
+
+                      Text(AppStrings.selectPhysiologicalStatus, style: TextStyle(
+                        fontFamily: "Lato",
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF2B292A),
+                      ),),
+                      SizedBox(height: spacing12),
+                      Text(
+                        AppStrings.physiologicalConditions,
+                        style: TextStyle(
+                          fontSize: context.responsiveFontSize(14.0),
+                          fontWeight: FontWeight.w400,
+                          color: AppColors.textPrimary,
+                          fontFamily: 'Lato',
+                        ),
+                      ),
+                      SizedBox(height: spacing12),
+                      _buildCheckbox(AppStrings.pregnancy, 'pregnancy'),
+                      _buildCheckbox(AppStrings.lactation, 'lactation'),
+                      _buildCheckbox(AppStrings.diabetes, 'diabetes'),
+                      _buildCheckbox(AppStrings.hypertension, 'hypertension'),
+                      _buildCheckbox(AppStrings.cardiacProblem, 'cardiac'),
+                      _buildCheckbox(AppStrings.kidneyDisease, 'kidney'),
+                      _buildCheckbox(AppStrings.liverRelatedProblem, 'liver'),
+                      _buildCheckbox(AppStrings.others, 'others'),
+
+                      if (_conditions.contains('others')) ...[
+                        SizedBox(height: spacing12),
+                        _buildTextField(
+                          label: AppStrings.mentionOtherConditions,
+                          controller: _otherConditionsController,
+                          onChanged: (value) =>
+                              setState(() => _otherConditions = value),
+                          maxLines: 3,
+                        ),
+                      ],
+
+                      SizedBox(height: spacing24),
+
+                      // Regular Status Section
+                      _buildSectionTitle(AppStrings.areYouRegularly),
+                      SizedBox(height: spacing16),
+                      _buildRegularStatusOption(
+                        AppStrings.constipated,
+                        'constipated',
+                      ),
+                      SizedBox(height: spacing12),
+                      _buildRegularStatusOption(
+                        AppStrings.diarrhoeal,
+                        'diarrhoeal',
+                      ),
+                      SizedBox(height: spacing12),
+                      _buildRegularStatusOption(AppStrings.both, 'both'),
+                      SizedBox(height: spacing12),
+                      _buildRegularStatusOption(AppStrings.none, 'none'),
+
+                      SizedBox(height: spacing24),
+
+                      // Save Button
+                      PrimaryButton(
+                        text: AppStrings.save,
+                        onPressed: _isFormValid && !authState.isLoading
+                            ? _handleSave
+                            : null,
+                        textColor: Colors.white,
+                        height: context.inputHeight,
+                        isLoading: authState.isLoading,
+                      ),
+                      SizedBox(height:context.responsiveSpacing(90.0)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Fixed Edit Button Overlay
+          Positioned(
+            top: 70,
+            right: 30,
+            child: GestureDetector(
+              onTap: () => context.push(RouteNames.editPersonalProfile),
+              child: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Color(0xFF5D9E40),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Center(child: Image.asset("assets/images/edit_user.png", height: 16,width: 19,)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageSection() {
+    return SizedBox(
+      width: double.infinity,
+      height: 310,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Green gradient background with pattern
+          Container(
+            width: double.infinity,
+            height: 150,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF5D9E40), Color(0xFF4A7D33)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: SafeArea(
+              child: Image.asset(
+                "assets/images/header_bg.png",
+                width: MediaQuery.of(context).size.width,
+                height: 150,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+
+          // Centered food image
+          Positioned(
+            top: 60,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 342,
+                height: 250,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.transparent
+                  // boxShadow: [
+                  //   BoxShadow(
+                  //     color: Colors.black.withValues(alpha: 0.2),
+                  //     blurRadius: 20,
+                  //     offset: const Offset(0, 10),
+                  //   ),
+                  // ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    "https://www.shutterstock.com/image-photo/close-head-shot-portrait-preppy-600nw-1433809418.jpg",
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey.shade300,
+                        child: Icon(
+                          Icons.restaurant,
+                          size: 80,
+                          color: Colors.grey.shade600,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: context.responsiveFontSize(14.0),
+        fontWeight: FontWeight.w400,
+        color: AppColors.textPrimary,
+        fontFamily: 'Lato',
+      ),
+    );
+  }
+
+  Widget _buildNumberField({
+    required String label,
+    required TextEditingController controller,
+    required Function(String) onChanged,
+    int? maxValue,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: context.responsiveFontSize(14.0),
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w400,
+            fontFamily: 'Lato',
+          ),
+        ),
+        SizedBox(height: context.responsiveSpacing(8.0)),
+        TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+          ],
+          onChanged: onChanged,
+          style: TextStyle(
+            fontSize: context.responsiveFontSize(14.0),
+            color: AppColors.textPrimary,
+            fontFamily: 'Lato',
+          ),
+          decoration: InputDecoration(
+            hintText: '0',
+            hintStyle: TextStyle(
+              color: AppColors.textSecondary.withValues(alpha: 0.5),
+              fontFamily: 'Lato',
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: context.responsiveSpacing(16.0),
+              vertical: context.responsiveSpacing(12.0),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(
+                context.responsiveSpacing(4.0),
+              ),
+              borderSide: const BorderSide(
+                color: AppColors.borderColor,
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(
+                context.responsiveSpacing(4.0),
+              ),
+              borderSide: const BorderSide(
+                color: AppColors.primaryGreen,
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required String label,
+    required TextEditingController controller,
+    required Function(String) onChanged,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: context.responsiveFontSize(13.0),
+            color: AppColors.textSecondary,
+            fontFamily: 'Lato',
+          ),
+        ),
+        SizedBox(height: context.responsiveSpacing(8.0)),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          onChanged: onChanged,
+          style: TextStyle(
+            fontSize: context.responsiveFontSize(14.0),
+            color: AppColors.textPrimary,
+            fontFamily: 'Lato',
+          ),
+          decoration: InputDecoration(
+            hintText: 'Text',
+            hintStyle: TextStyle(
+              color: AppColors.textSecondary.withValues(alpha: 0.5),
+              fontFamily: 'Lato',
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: context.responsiveSpacing(16.0),
+              vertical: context.responsiveSpacing(12.0),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(
+                context.responsiveSpacing(8.0),
+              ),
+              borderSide: const BorderSide(
+                color: AppColors.borderColor,
+                width: 1,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(
+                context.responsiveSpacing(8.0),
+              ),
+              borderSide: const BorderSide(
+                color: AppColors.primaryGreen,
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActivityOption({
+    required String title,
+    required String description,
+    required String value,
+  }) {
+    final isSelected = _activityLevel == value;
+    return GestureDetector(
+      onTap: () => setState(() => _activityLevel = value),
+      child: Container(
+        padding: EdgeInsets.all(context.responsiveSpacing(12.0)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(context.responsiveSpacing(4.0)),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGreen : AppColors.borderColor,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: isSelected
+                  ? AppColors.primaryGreen
+                  : AppColors.textSecondary,
+              size: 20,
+            ),
+            SizedBox(width: context.responsiveSpacing(12.0)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    spacing: 10,
+                    children: [
+                      Image.asset("assets/images/user.png", height: 16,width: 16,),
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: context.responsiveFontSize(14.0),
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                          fontFamily: 'Lato',
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: context.responsiveSpacing(4.0)),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 10,
+                    children: [
+                      Image.asset("assets/images/tool.png", height: 16,width: 16,),
+                      Expanded(
+                        child: Text(
+                          description,
+                          softWrap: true,
+                          style: TextStyle(
+                            fontSize: context.responsiveFontSize(12.0),
+                            color: AppColors.textSecondary,
+                            fontFamily: 'Lato',
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExerciseToggle({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          vertical: context.responsiveSpacing(12.0),
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryGreen : Colors.white,
+          borderRadius: BorderRadius.circular(context.responsiveSpacing(8.0)),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGreen : AppColors.borderColor,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : AppColors.primaryGreen,
+              size: 18,
+            ),
+            SizedBox(width: context.responsiveSpacing(6.0)),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: context.responsiveFontSize(12.0),
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                  fontFamily: 'Lato',
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExerciseTypeOption({
+    required String title,
+    required String description,
+    required String value,
+    required IconData icon,
+  }) {
+    final isSelected = _exerciseType == value;
+    return GestureDetector(
+      onTap: () => setState(() => _exerciseType = value),
+      child: Container(
+        padding: EdgeInsets.all(context.responsiveSpacing(12.0)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(context.responsiveSpacing(4.0)),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGreen : AppColors.borderColor,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: isSelected
+                  ? AppColors.primaryGreen
+                  : AppColors.textSecondary,
+              size: 20,
+            ),
+            SizedBox(width: context.responsiveSpacing(12.0)),
+            Icon(icon, color: AppColors.primaryGreen, size: 20),
+            SizedBox(width: context.responsiveSpacing(8.0)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: context.responsiveFontSize(14.0),
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                      fontFamily: 'Lato',
+                    ),
+                  ),
+                  SizedBox(height: context.responsiveSpacing(4.0)),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: context.responsiveFontSize(12.0),
+                      color: AppColors.textSecondary,
+                      fontFamily: 'Lato',
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCheckbox(String label, String value) {
+    final isChecked = _conditions.contains(value);
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (isChecked) {
+            _conditions.remove(value);
+          } else {
+            _conditions.add(value);
+          }
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: context.responsiveSpacing(8.0)),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                color: isChecked ? AppColors.primaryGreen : Colors.white,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: isChecked
+                      ? AppColors.primaryGreen
+                      : AppColors.borderColor,
+                  width: 1.5,
+                ),
+              ),
+              child: isChecked
+                  ? const Icon(Icons.check, color: Colors.white, size: 14)
+                  : null,
+            ),
+            SizedBox(width: context.responsiveSpacing(12.0)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: context.responsiveFontSize(14.0),
+                color: AppColors.textPrimary,
+                fontFamily: 'Lato',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegularStatusOption(String label, String value) {
+    final isSelected = _regularlyStatus == value;
+    return GestureDetector(
+      onTap: () => setState(() => _regularlyStatus = value),
+      child: Container(
+        padding: EdgeInsets.all(context.responsiveSpacing(12.0)),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(context.responsiveSpacing(4.0)),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGreen : AppColors.borderColor,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color: isSelected
+                  ? AppColors.primaryGreen
+                  : AppColors.textSecondary,
+              size: 20,
+            ),
+            SizedBox(width: context.responsiveSpacing(12.0)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: context.responsiveFontSize(14.0),
+                fontWeight: FontWeight.w400,
+                color: AppColors.textPrimary,
+                fontFamily: 'Lato',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
