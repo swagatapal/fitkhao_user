@@ -14,27 +14,6 @@ sealed class AppException implements Exception {
   String toString() => message;
 }
 
-/// Network related exceptions
-class NetworkException extends AppException {
-  const NetworkException({
-    required super.message,
-    super.code,
-    super.originalError,
-  });
-}
-
-/// API related exceptions
-class ApiException extends AppException {
-  final int? statusCode;
-
-  const ApiException({
-    required super.message,
-    this.statusCode,
-    super.code,
-    super.originalError,
-  });
-}
-
 /// Authentication related exceptions
 class AuthException extends AppException {
   const AuthException({
@@ -65,37 +44,19 @@ class CacheException extends AppException {
   });
 }
 
-/// Timeout exceptions
-class TimeoutException extends AppException {
-  const TimeoutException({
-    super.message = 'Request timeout. Please try again.',
+/// Processing related exceptions
+class ProcessingException extends AppException {
+  const ProcessingException({
+    super.message = 'Processing error. Please try again.',
     super.code,
     super.originalError,
   });
 }
 
-/// Server error exceptions
-class ServerException extends AppException {
-  const ServerException({
-    super.message = 'Server error. Please try again later.',
-    super.code,
-    super.originalError,
-  });
-}
-
-/// Not found exceptions
+/// Data not found exceptions
 class NotFoundException extends AppException {
   const NotFoundException({
-    super.message = 'Resource not found.',
-    super.code,
-    super.originalError,
-  });
-}
-
-/// Unauthorized exceptions
-class UnauthorizedException extends AppException {
-  const UnauthorizedException({
-    super.message = 'Unauthorized access. Please login again.',
+    super.message = 'Data not found.',
     super.code,
     super.originalError,
   });
@@ -116,13 +77,18 @@ class ExceptionHandler {
     }
   }
 
-  /// Check if error is a network error
-  static bool isNetworkError(dynamic error) {
-    return error is NetworkException || error is TimeoutException;
-  }
-
   /// Check if error is an authentication error
   static bool isAuthError(dynamic error) {
-    return error is AuthException || error is UnauthorizedException;
+    return error is AuthException;
+  }
+
+  /// Check if error is a validation error
+  static bool isValidationError(dynamic error) {
+    return error is ValidationException;
+  }
+
+  /// Check if error is a storage error
+  static bool isStorageError(dynamic error) {
+    return error is CacheException;
   }
 }

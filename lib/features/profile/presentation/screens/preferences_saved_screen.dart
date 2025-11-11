@@ -1,14 +1,18 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/responsive_utils.dart';
 
 class PreferencesSavedScreen extends ConsumerStatefulWidget {
-  const PreferencesSavedScreen({super.key});
+
+  const PreferencesSavedScreen({ super.key});
 
   @override
   ConsumerState<PreferencesSavedScreen> createState() =>
@@ -69,8 +73,8 @@ class _PreferencesSavedScreenState
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 20,
+                    color: Colors.black.withValues(alpha: AppSizes.opacity10),
+                    blurRadius: AppSizes.shadowBlur20,
                     offset: const Offset(0, -5),
                   ),
                 ],
@@ -79,51 +83,8 @@ class _PreferencesSavedScreenState
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Success Icon
-                  Container(
-                    width: context.screenWidth * 0.4,
-                    height: context.screenWidth * 0.4,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(
-                        context.responsiveSpacing(20.0),
-                      ),
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Folder icon
-                        Icon(
-                          Icons.folder_open,
-                          size: context.responsiveSpacing(80.0),
-                          color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                        ),
-                        // Rocket icon
-                        Positioned(
-                          top: context.responsiveSpacing(20.0),
-                          right: context.responsiveSpacing(20.0),
-                          child: Transform.rotate(
-                            angle: -0.5,
-                            child: Icon(
-                              Icons.rocket_launch,
-                              size: context.responsiveSpacing(60.0),
-                              color: AppColors.primaryGreen,
-                            ),
-                          ),
-                        ),
-                        // Checkmark
-                        Positioned(
-                          bottom: context.responsiveSpacing(10.0),
-                          left: context.responsiveSpacing(30.0),
-                          child: Icon(
-                            Icons.check_circle,
-                            size: context.responsiveSpacing(40.0),
-                            color: AppColors.primaryGreen,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: spacing48),
+                 Image.asset("assets/images/buttonshit_logo.png", height: AppSizes.logoHeight,width: AppSizes.logoWidth,),
+                  SizedBox(height: spacing24),
 
                   // "Yay!" title
                   Text(
@@ -157,7 +118,7 @@ class _PreferencesSavedScreenState
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: context.responsiveFontSize(16.0),
-                      fontWeight: FontWeight.w400,
+                      fontWeight: FontWeight.w700,
                       color: AppColors.textSecondary,
                       fontFamily: 'Lato',
                       height: 1.5,

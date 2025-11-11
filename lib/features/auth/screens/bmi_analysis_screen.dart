@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../shared/widgets/logo_widget.dart';
@@ -388,10 +390,10 @@ class _BmiAnalysisScreenState extends ConsumerState<BmiAnalysisScreen> {
         height: context.inputHeight,
         decoration: BoxDecoration(
           color: isSelected ? Color(0xFF5D9E40) : Colors.white,
-          borderRadius: BorderRadius.circular(context.responsiveSpacing(42.0)),
+          borderRadius: BorderRadius.circular(context.responsiveSpacing(AppSizes.radius42)),
           border: Border.all(
             color: isSelected ? AppColors.primaryGreen : AppColors.borderColor,
-            width: 1,
+            width: AppSizes.borderNormal,
           ),
         ),
         child: Row(
@@ -400,7 +402,7 @@ class _BmiAnalysisScreenState extends ConsumerState<BmiAnalysisScreen> {
             Icon(
               icon,
               color: isSelected ? Colors.white : Color(0xFF5D9E40),
-              size: 24,
+              size: AppSizes.icon24,
             ),
             SizedBox(width: context.responsiveSpacing(8.0)),
             Text(
@@ -430,10 +432,10 @@ class _BmiAnalysisScreenState extends ConsumerState<BmiAnalysisScreen> {
         height: context.inputHeight,
         decoration: BoxDecoration(
           color: isSelected ? Color(0xFF5D9E40): Colors.white,
-          borderRadius: BorderRadius.circular(context.responsiveSpacing(42.0)),
+          borderRadius: BorderRadius.circular(context.responsiveSpacing(AppSizes.radius42)),
           border: Border.all(
             color: isSelected ? AppColors.primaryGreen : AppColors.borderColor,
-            width: 1,
+            width: AppSizes.borderNormal,
           ),
         ),
         child: Row(
@@ -442,7 +444,7 @@ class _BmiAnalysisScreenState extends ConsumerState<BmiAnalysisScreen> {
             Icon(
               icon,
               color: isSelected ? Colors.white : AppColors.primaryGreen,
-              size: 20,
+              size: AppSizes.icon20,
             ),
             SizedBox(width: context.responsiveSpacing(8.0)),
             Flexible(
@@ -455,7 +457,7 @@ class _BmiAnalysisScreenState extends ConsumerState<BmiAnalysisScreen> {
                   fontFamily: 'Lato',
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 1,
+                maxLines: AppSizes.maxLines1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -497,20 +499,20 @@ class _BmiAnalysisScreenState extends ConsumerState<BmiAnalysisScreen> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(
-                context.responsiveSpacing(4.0),
+                context.responsiveSpacing(AppSizes.radius4),
               ),
               borderSide: const BorderSide(
                 color: AppColors.borderColor,
-                width: 1.5,
+                width: AppSizes.borderMedium,
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(
-                context.responsiveSpacing(4.0),
+                context.responsiveSpacing(AppSizes.radius4),
               ),
               borderSide: const BorderSide(
                 color: AppColors.primaryGreen,
-                width: 1.5,
+                width: AppSizes.borderMedium,
               ),
             ),
           ),
@@ -554,20 +556,20 @@ class _BmiAnalysisScreenState extends ConsumerState<BmiAnalysisScreen> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(
-            context.responsiveSpacing(4.0),
+            context.responsiveSpacing(AppSizes.radius4),
           ),
           borderSide: const BorderSide(
             color: AppColors.borderColor,
-            width: 1.5,
+            width: AppSizes.borderMedium,
           ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(
-            context.responsiveSpacing(4.0),
+            context.responsiveSpacing(AppSizes.radius4),
           ),
           borderSide: const BorderSide(
             color: AppColors.primaryGreen,
-            width: 1.5,
+            width: AppSizes.borderMedium,
           ),
         ),
       ),

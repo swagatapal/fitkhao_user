@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:phone_number_hint/phone_number_hint.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../core/providers/providers.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/utils/responsive_utils.dart';
@@ -91,7 +93,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
         context: context,
         backgroundColor: Colors.white,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppSizes.radius20)),
         ),
         builder: (BuildContext context) {
           return Padding(
@@ -105,7 +107,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
                     const Icon(
                       Icons.phone_android,
                       color: AppColors.primaryGreen,
-                      size: 24,
+                      size: AppSizes.icon24,
                     ),
                     SizedBox(width: context.responsiveSpacing(12.0)),
                     Text(
@@ -146,7 +148,7 @@ class _PhoneAuthScreenState extends ConsumerState<PhoneAuthScreen> {
                     ),
                     trailing: const Icon(
                       Icons.arrow_forward_ios,
-                      size: 16,
+                      size: AppSizes.icon16,
                       color: AppColors.textTertiary,
                     ),
                     onTap: () {
@@ -288,12 +290,12 @@ Future<void> getPhoneNumber() async {
                               fontFamily: 'Lato',
                             ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppSizes.spacing4),
                       Text(
                         '*',
                         style: TextStyle(
                           color: AppColors.errorColor,
-                          fontSize: context.responsiveFontSize(16.0),
+                          fontSize: context.responsiveFontSize(AppTypography.fontSize16),
                         ),
                       ),
                     ],
@@ -306,7 +308,7 @@ Future<void> getPhoneNumber() async {
                         color: _phoneFocusNode.hasFocus
                             ? AppColors.inputFocusedBorder
                             : AppColors.inputBorder,
-                        width: _phoneFocusNode.hasFocus ? 2 : 1,
+                        width: _phoneFocusNode.hasFocus ? AppSizes.borderThick : AppSizes.borderNormal,
                       ),
                       borderRadius: BorderRadius.circular(radiusSmall),
                     ),
@@ -336,8 +338,8 @@ Future<void> getPhoneNumber() async {
                         ),
                         // Divider
                         Container(
-                          height: context.isSmallMobile ? 25 : 30,
-                          width: 1,
+                          height: context.isSmallMobile ? AppSizes.dividerHeight : AppSizes.dividerHeightMedium,
+                          width: AppSizes.dividerWidth,
                           color: AppColors.dividerColor,
                         ),
                         // Phone Number Input
@@ -347,7 +349,7 @@ Future<void> getPhoneNumber() async {
                             focusNode: _phoneFocusNode,
                             keyboardType: TextInputType.phone,
                             clipBehavior: Clip.hardEdge,
-                            maxLength: 10,
+                            maxLength: AppSizes.maxLengthPhone,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
@@ -363,9 +365,27 @@ Future<void> getPhoneNumber() async {
                             decoration: InputDecoration(
                               hintText: AppStrings.phoneNumberHint,
                               border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                            
+                              // enabledBorder: InputBorder.none,
+                              // focusedBorder: InputBorder.none,
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  context.responsiveSpacing(4.0),
+                                ),
+                                borderSide: const BorderSide(
+                                  color: AppColors.textWhite,
+                                  //width: AppSizes.borderMedium,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  context.responsiveSpacing(4.0),
+                                ),
+                                borderSide: const BorderSide(
+                                  color: AppColors.textWhite,
+                                  //width: AppSizes.borderMedium,
+                                ),
+                              ),
+
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: spacing16,
                                 vertical: spacing16,
@@ -393,30 +413,30 @@ Future<void> getPhoneNumber() async {
               PrimaryButton(
                 text: AppStrings.getCode,
                 textColor: Colors.white,
-                onPressed: authState.phoneNumber.length == 10 &&
+                onPressed: authState.phoneNumber.length == AppSizes.maxLengthPhone &&
                         authState.isTermsAccepted &&
                         !authState.isLoading
                     ? _handleGetCode
                     : null,
                 isLoading: authState.isLoading,
-                height: 50.0,
+                height: AppSizes.buttonHeight,
                 disabledBackgroundColor: const Color(0xFFA0D488),
                 icon: Icon(
                   Icons.arrow_forward,
                   color: Colors.white,
-                  size: context.isSmallMobile ? 18.0 : 20.0,
+                  size: context.isSmallMobile ? AppSizes.icon18 : AppSizes.icon20,
                 ),
               ),
               SizedBox(height: spacing16),
               // Auto Fetch Button
               PrimaryButton(
-                height: 50,
+                height: AppSizes.buttonHeight,
                 text: AppStrings.autoFetchPhoneNumber,
                 onPressed: authState.isLoading ? null : getPhoneNumber,
                 textColor: Colors.white,
                 icon: Icon(
                   Icons.call_outlined,
-                  size: context.isSmallMobile ? 18.0 : 20.0,
+                  size: context.isSmallMobile ? AppSizes.icon18 : AppSizes.icon20,
                   color: Colors.white,
                 ),
               ),
@@ -427,7 +447,7 @@ Future<void> getPhoneNumber() async {
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: AppColors.primaryGreen,
-                    width: 1.5,
+                    width: AppSizes.borderMedium,
                   ),
                   borderRadius: BorderRadius.circular(radiusSmall),
                 ),

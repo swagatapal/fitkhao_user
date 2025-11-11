@@ -1,13 +1,15 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/providers.dart';
 import '../models/auth_state.dart';
-import '../services/auth_service.dart';
+import '../repository/auth_repository.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
   Timer? _resendTimer;
-  final AuthService _authService;
+  final AuthRepository _authRepository;
 
-  AuthNotifier(this._authService) : super(const AuthState());
+  AuthNotifier(this._authRepository) : super(const AuthState());
 
   @override
   void dispose() {
@@ -97,17 +99,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final response = await _authService.sendOtp(
+      final response = await _authRepository.sendOTP(
         phoneNumber: state.phoneNumber,
-        termsAccepted: state.isTermsAccepted,
+        countryCode: state.countryCode,
       );
 
       if (response.success) {
-        // Store OTP message and start resend timer
+        // Start resend timer
         state = state.copyWith(
           isLoading: false,
           errorMessage: null,
-          receivedOtpMessage: response.data?.message,
+          receivedOtpMessage: response.message,
         );
         _startResendTimer();
         return true;
@@ -127,17 +129,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Register/Verify OTP
-  Future<RegisterResponse?> verifyOtp() async {
+  /// Verify OTP
+  Future<bool> verifyOtp() async {
     if (!validateOtpForm()) {
-      return null;
+      return false;
     }
 
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final response = await _authService.register(
+      final response = await _authRepository.verifyOTP(
         phoneNumber: state.phoneNumber,
+        countryCode: state.countryCode,
         otp: state.otp,
       );
 
@@ -146,20 +149,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isLoading: false,
           errorMessage: null,
         );
-        return response;
+        return true;
       } else {
         state = state.copyWith(
           isLoading: false,
           errorMessage: response.message,
         );
-        return null;
+        return false;
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll('Exception: ', ''),
       );
-      return null;
+      return false;
     }
   }
 
@@ -168,16 +171,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isResendingOtp: true, errorMessage: null);
 
     try {
-      final response = await _authService.sendOtp(
+      final response = await _authRepository.resendOTP(
         phoneNumber: state.phoneNumber,
-        termsAccepted: true,
+        countryCode: state.countryCode,
       );
 
       if (response.success) {
         state = state.copyWith(
           isResendingOtp: false,
           errorMessage: null,
-          receivedOtpMessage: response.data?.message,
+          receivedOtpMessage: response.message,
         );
         _startResendTimer();
         return true;
@@ -305,7 +308,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Complete registration with all collected data
-  Future<RegisterResponse?> completeRegistration() async {
+  /// Stores data locally - no API calls
+  Future<bool> completeRegistration() async {
     // Validate all required data is present
     if (state.phoneNumber.isEmpty ||
         state.name.isEmpty ||
@@ -318,104 +322,68 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         errorMessage: 'Missing required information. Please complete all steps.',
       );
-      return null;
+      return false;
     }
 
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final response = await _authService.completeRegistration(
-        phoneNumber: state.phoneNumber,
-        name: state.name,
-        gender: state.gender.capitalize(),
-        dateOfBirth: state.dateOfBirth!,
-        height: state.height!,
-        weight: state.weight!,
-        buildingNameNumber: state.buildingNameNumber,
-        street: state.street,
-        pincode: state.pincode,
-        latitude: state.latitude,
-        longitude: state.longitude,
-        doesExercise: state.doesExercise,
-        termsAccepted: state.isTermsAccepted,
-        physicalActivityLevel: state.physicalActivityLevel,
-        exerciseDaysPerWeek: state.exerciseDaysPerWeek,
-        exerciseDurationHours: state.exerciseDurationHours,
-        exerciseType: state.exerciseType,
-        pregnancy: state.pregnancy,
-        lactation: state.lactation,
-        diabetes: state.diabetes,
-        hypertension: state.hypertension,
-        cardiacProblem: state.cardiacProblem,
-        kidneyDisease: state.kidneyDisease,
-        liverRelatedProblem: state.liverRelatedProblem,
-        otherConditions: state.otherConditions,
-        regularityStatus: state.regularityStatus,
+      // Simulate processing delay
+      await Future.delayed(const Duration(seconds: 1));
+
+      // All data is already stored in the state
+      // Mark registration as complete
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: null,
       );
 
-      if (response.success) {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: null,
-        );
-        return response;
-      } else {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: response.message,
-        );
-        return null;
-      }
+      debugPrint('[AuthNotifier] Registration completed successfully');
+      return true;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll('Exception: ', ''),
       );
-      return null;
+      return false;
     }
   }
 
-  /// Fetch user data by phone number
-  Future<RegisterResponse?> getUserByPhone(String phoneNumber) async {
+  /// Check if user exists by phone number
+  /// Returns true if user is already logged in
+  Future<bool> getUserByPhone(String phoneNumber) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final response = await _authService.getUserByPhone(
-        phoneNumber: phoneNumber,
-      );
+      // Simulate processing delay
+      await Future.delayed(const Duration(seconds: 1));
 
-      if (response.success && response.data != null) {
-        // Update state with fetched user data
-        final user = response.data!.user;
+      // Check if user is logged in via repository
+      final isLoggedIn = _authRepository.isLoggedIn();
+      final storedPhone = _authRepository.getUserPhone();
+
+      if (isLoggedIn && storedPhone == phoneNumber) {
+        // User exists and is logged in
         state = state.copyWith(
           isLoading: false,
-          phoneNumber: user.phoneNumber,
-          name: user.name ?? '',
-          gender: user.gender?.toLowerCase() ?? 'female',
-          dateOfBirth: user.dateOfBirth,
-          height: user.height,
-          weight: user.weight,
-          bmi: user.bmi,
-          healthScore: user.healthScore,
-          buildingNameNumber: user.buildingNameNumber ?? '',
-          street: user.street ?? '',
-          pincode: user.pincode ?? '',
+          phoneNumber: phoneNumber,
           errorMessage: null,
         );
-        return response;
+        return true;
       } else {
+        // User doesn't exist or not logged in
         state = state.copyWith(
           isLoading: false,
-          errorMessage: response.message,
+          errorMessage: null,
         );
-        return null;
+        return false;
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll('Exception: ', ''),
       );
-      return null;
+      return false;
     }
   }
 
@@ -437,13 +405,8 @@ extension StringExtension on String {
   }
 }
 
-// Provider for AuthService
-final authServiceProvider = Provider<AuthService>((ref) {
-  return AuthService();
-});
-
 // Provider for AuthNotifier
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  final authService = ref.watch(authServiceProvider);
-  return AuthNotifier(authService);
+  final authRepository = ref.watch(authRepositoryProvider);
+  return AuthNotifier(authRepository);
 });

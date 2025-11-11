@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../shared/widgets/logo_widget.dart';
@@ -101,12 +103,12 @@ class _NameInputScreenState extends ConsumerState<NameInputScreen> {
                           fontFamily: 'Lato',
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppSizes.spacing4),
                       Text(
                         '*',
                         style: TextStyle(
                           color: AppColors.errorColor,
-                          fontSize: context.responsiveFontSize(16.0),
+                          fontSize: context.responsiveFontSize(AppTypography.fontSize16),
                         ),
                       ),
                     ],
@@ -145,7 +147,7 @@ class _NameInputScreenState extends ConsumerState<NameInputScreen> {
                         ),
                         borderSide: const BorderSide(
                           color: AppColors.borderColor,
-                          width: 1.5,
+                          width: AppSizes.borderMedium,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
@@ -154,7 +156,7 @@ class _NameInputScreenState extends ConsumerState<NameInputScreen> {
                         ),
                         borderSide: const BorderSide(
                           color: AppColors.primaryGreen,
-                          width: 1.5,
+                          width: AppSizes.borderMedium,
                         ),
                       ),
                     ),
@@ -177,7 +179,7 @@ class _NameInputScreenState extends ConsumerState<NameInputScreen> {
                 textColor: Colors.white,
                 onPressed: _name.isNotEmpty ? _handleContinue : null,
                 isLoading: false,
-                height: 50.0,
+                height: AppSizes.buttonHeight,
                 disabledBackgroundColor: const Color(0xFFA0D488),
               ),
             ],

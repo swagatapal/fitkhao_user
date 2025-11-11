@@ -37,10 +37,10 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // Get responsive button height based on screen size
     final buttonHeight = height ?? context.buttonHeight;
-    final spacing = context.responsiveSpacing(8.0);
-    final fontSize = context.responsiveFontSize(16.0);
-    final iconSize = context.isSmallMobile ? 18.0 : 20.0;
-    final loadingSize = context.isSmallMobile ? 20.0 : 24.0;
+    final spacing = context.responsiveSpacing(AppSizes.spacing8);
+    final fontSize = context.responsiveFontSize(AppSizes.spacing16);
+    final iconSize = context.isSmallMobile ? AppSizes.icon18 : AppSizes.icon20;
+    final loadingSize = context.isSmallMobile ? AppSizes.scaleLoading : AppSizes.scaleLoadingLarge;
 
     return SizedBox(
       width: width ?? double.infinity,
@@ -58,7 +58,7 @@ class PrimaryButton extends StatelessWidget {
             side: borderColor != null
                 ? BorderSide(
                     color: borderColor!,
-                    width: borderWidth ?? 1.5,
+                    width: borderWidth ?? AppSizes.borderMedium,
                   )
                 : BorderSide.none,
           ),
@@ -71,9 +71,9 @@ class PrimaryButton extends StatelessWidget {
             ? SizedBox(
                 height: loadingSize,
                 width: loadingSize,
-                child: const CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(
+                child: CircularProgressIndicator(
+                  strokeWidth: AppSizes.strokeWidth,
+                  valueColor: const AlwaysStoppedAnimation<Color>(
                     AppColors.textWhite,
                   ),
                 ),
@@ -82,29 +82,27 @@ class PrimaryButton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  
                   Flexible(
                     child: Center(
                       child: Text(
                         text,
                         overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        style: TextStyle(
+                        maxLines: AppSizes.maxLines1,
+                        style: const TextStyle(
                           fontFamily: "Lato",
-                          fontSize: 14,
+                          fontSize: AppSizes.icon14,
                           fontWeight: FontWeight.w600
                         ),
                       ),
                     ),
                   ),
- SizedBox(width: spacing),
                   if (icon != null) ...[
+                    SizedBox(width: spacing),
                     SizedBox(
                       width: iconSize,
                       height: iconSize,
                       child: icon!,
                     ),
-                   
                   ],
                 ],
               ),

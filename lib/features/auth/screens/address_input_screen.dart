@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:geolocator/geolocator.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../shared/widgets/logo_widget.dart';
@@ -16,8 +16,7 @@ class AddressInputScreen extends ConsumerStatefulWidget {
   const AddressInputScreen({super.key});
 
   @override
-  ConsumerState<AddressInputScreen> createState() =>
-      _AddressInputScreenState();
+  ConsumerState<AddressInputScreen> createState() => _AddressInputScreenState();
 }
 
 class _AddressInputScreenState extends ConsumerState<AddressInputScreen> {
@@ -32,7 +31,14 @@ class _AddressInputScreenState extends ConsumerState<AddressInputScreen> {
   String _building = '';
   String _street = '';
   String _pincode = '';
-  bool _isLoadingLocation = false;
+  bool _isNavigatingToMap = false;
+  String? _selectedAddressType;
+
+  final List<Map<String, dynamic>> _addressTypes = const [
+    {'label': 'Home', 'icon': Icons.home_outlined},
+    {'label': 'Work', 'icon': Icons.work_outline},
+    {'label': 'Other', 'icon': Icons.location_on_outlined},
+  ];
 
   @override
   void dispose() {
@@ -46,170 +52,85 @@ class _AddressInputScreenState extends ConsumerState<AddressInputScreen> {
   }
 
   bool get _isFormValid {
-    return _building.isNotEmpty && _street.isNotEmpty && _pincode.length == 6;
+    return _building.isNotEmpty &&
+        _street.isNotEmpty &&
+        _pincode.length == AppSizes.maxLengthPincode;
   }
 
   void _handleContinue() {
     // Save address to auth provider
-    ref.read(authProvider.notifier).saveAddress(
-      buildingNameNumber: _building,
-      street: _street,
-      pincode: _pincode,
-    );
+    ref
+        .read(authProvider.notifier)
+        .saveAddress(
+          buildingNameNumber: _building,
+          street: _street,
+          pincode: _pincode,
+        );
 
     // Navigate to BMI analysis screen
     context.go(RouteNames.bmiAnalysis);
   }
 
-  void _handleLocateOnMap() async {
+  Future<void> _handleLocateOnMap() async {
+    FocusScope.of(context).unfocus();
     setState(() {
-      _isLoadingLocation = true;
+      _isNavigatingToMap = true;
     });
 
     try {
-      // Check if location services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() {
-          _isLoadingLocation = false;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location services are disabled. Please enable them.'),
-              backgroundColor: AppColors.errorColor,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+      final result = await context.push<Map<String, dynamic>>(
+        RouteNames.mapPicker,
+      );
+      if (!mounted) {
         return;
       }
 
-      // Check location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() {
-            _isLoadingLocation = false;
-          });
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Location permissions are denied'),
-                backgroundColor: AppColors.errorColor,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-          return;
-        }
-      }
+      if (result != null) {
+        final building = (result['building'] as String? ?? '').trim();
+        final streetResult = (result['street'] as String? ?? '').trim();
+        final fallbackStreet = (result['fullAddress'] as String? ?? '').trim();
+        final pincode = (result['pincode'] as String? ?? '').trim();
+        final latitude = (result['latitude'] as num?)?.toDouble();
+        final longitude = (result['longitude'] as num?)?.toDouble();
 
-      if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _isLoadingLocation = false;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location permissions are permanently denied'),
-              backgroundColor: AppColors.errorColor,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-        return;
-      }
+        final streetValue = streetResult.isNotEmpty
+            ? streetResult
+            : fallbackStreet;
 
-      // Get current position
-      Position position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
-      );
-
-      final double latitude = position.latitude;
-      final double longitude = position.longitude;
-
-      // Print to console
-      debugPrint('===== DEVICE LOCATION =====');
-      debugPrint('Latitude: $latitude');
-      debugPrint('Longitude: $longitude');
-      debugPrint('Accuracy: ${position.accuracy} meters');
-      debugPrint('Timestamp: ${position.timestamp}');
-      debugPrint('===========================');
-
-      // Perform reverse geocoding to get address from coordinates
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        latitude,
-        longitude,
-      );
-
-      if (placemarks.isNotEmpty) {
-        Placemark place = placemarks[0];
-
-        // Extract address components
-        String building = place.subThoroughfare ?? place.name ?? '';
-        String street = place.thoroughfare ?? place.street ?? '';
-        String pincode = place.postalCode ?? '';
-
-        debugPrint('===== REVERSE GEOCODED ADDRESS =====');
-        debugPrint('Building: $building');
-        debugPrint('Street: $street');
-        debugPrint('Pincode: $pincode');
-        debugPrint('Full Address: ${place.street}, ${place.locality}, ${place.administrativeArea}');
-        debugPrint('====================================');
-
-        // Update the form fields
         setState(() {
           _building = building;
-          _street = street;
+          _street = streetValue;
           _pincode = pincode;
           _buildingController.text = building;
-          _streetController.text = '${place.street}, ${place.locality}, ${place.administrativeArea}';
+          _streetController.text = streetValue;
           _pincodeController.text = pincode;
         });
 
-        // Save address with location to auth provider
-        ref.read(authProvider.notifier).saveAddress(
-          buildingNameNumber: building,
-          street: street,
-          pincode: pincode,
-          latitude: latitude,
-          longitude: longitude,
-        );
+        ref
+            .read(authProvider.notifier)
+            .saveAddress(
+              buildingNameNumber: building,
+              street: streetValue,
+              pincode: pincode,
+              latitude: latitude,
+              longitude: longitude,
+            );
 
-        // Show success message
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location fetched successfully'),
-              backgroundColor: AppColors.primaryGreen,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-
-      setState(() {
-        _isLoadingLocation = false;
-      });
-    } catch (e) {
-      debugPrint('Error getting current location: $e');
-      setState(() {
-        _isLoadingLocation = false;
-      });
-      // Show error message to user
-      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Unable to get current location: ${e.toString()}'),
-            backgroundColor: AppColors.errorColor,
+          const SnackBar(
+            content: Text('Address selected from map'),
+            backgroundColor: AppColors.primaryGreen,
             behavior: SnackBarBehavior.floating,
           ),
         );
+      }
+    } catch (e) {
+      debugPrint('Error opening map picker: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isNavigatingToMap = false;
+        });
       }
     }
   }
@@ -224,10 +145,6 @@ class _AddressInputScreenState extends ConsumerState<AddressInputScreen> {
     int? maxLength,
   }) {
     final spacing8 = context.responsiveSpacing(8.0);
-    final spacing16 = context.responsiveSpacing(16.0);
-    final radiusSmall = context.responsiveSpacing(4.0);
-    final inputHeight = context.inputHeight;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -236,18 +153,18 @@ class _AddressInputScreenState extends ConsumerState<AddressInputScreen> {
             Text(
               label,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: context.responsiveFontSize(14.0),
-                    fontFamily: 'Lato',
-                  ),
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+                fontSize: context.responsiveFontSize(14.0),
+                fontFamily: 'Lato',
+              ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSizes.spacing4),
             Text(
               '*',
               style: TextStyle(
                 color: AppColors.errorColor,
-                fontSize: context.responsiveFontSize(16.0),
+                fontSize: context.responsiveFontSize(AppTypography.fontSize16),
               ),
             ),
           ],
@@ -261,41 +178,41 @@ class _AddressInputScreenState extends ConsumerState<AddressInputScreen> {
           maxLength: maxLength,
           onChanged: onChanged,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                fontSize: context.responsiveFontSize(16.0),
-                fontFamily: 'Lato',
-              ),
+            fontSize: context.responsiveFontSize(14.0),
+            fontFamily: 'Lato',
+          ),
           decoration: InputDecoration(
-        hintText: label,
-        hintStyle: TextStyle(
-          fontSize: context.responsiveFontSize(16.0),
-          color: AppColors.textSecondary,
-          fontFamily: 'Lato',
-        ),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: context.responsiveSpacing(20.0),
-          vertical: context.responsiveSpacing(16.0),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(
-            context.responsiveSpacing(4.0),
+            hintText: label,
+            hintStyle: TextStyle(
+              fontSize: context.responsiveFontSize(16.0),
+              color: AppColors.textSecondary,
+              fontFamily: 'Lato',
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: context.responsiveSpacing(16.0),
+              vertical: context.responsiveSpacing(12.0),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(
+                context.responsiveSpacing(4.0),
+              ),
+              borderSide: const BorderSide(
+                color: AppColors.borderColor,
+                width: AppSizes.borderMedium,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(
+                context.responsiveSpacing(4.0),
+              ),
+              borderSide: const BorderSide(
+                color: AppColors.primaryGreen,
+                width: AppSizes.borderMedium,
+              ),
+            ),
           ),
-          borderSide: const BorderSide(
-            color: AppColors.borderColor,
-            width: 1.5,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(
-            context.responsiveSpacing(4.0),
-          ),
-          borderSide: const BorderSide(
-            color: AppColors.primaryGreen,
-            width: 1.5,
-          ),
-        ),
-      ),
         ),
       ],
     );
@@ -323,31 +240,29 @@ class _AddressInputScreenState extends ConsumerState<AddressInputScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: spacing40),
+              SizedBox(height: spacing24),
               // Logo
-              const Center(
-                child: LogoWidget(),
-              ),
-              SizedBox(height: spacing48),
+              const Center(child: LogoWidget()),
+              SizedBox(height: spacing24),
               // Title
               Text(
                 AppStrings.whereToDeliver,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: context.responsiveFontSize(22.0),
-                      fontFamily: "Lato",
-                    ),
+                  fontWeight: FontWeight.w700,
+                  fontSize: context.responsiveFontSize(22.0),
+                  fontFamily: "Lato",
+                ),
               ),
               SizedBox(height: spacing8),
               // Subtitle
               Text(
                 AppStrings.pleaseEnterAddress,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: const Color(0xFF2B292A),
-                      fontWeight: FontWeight.w400,
-                      fontSize: context.responsiveFontSize(16.0),
-                      fontFamily: "Lato",
-                    ),
+                  color: const Color(0xFF2B292A),
+                  fontWeight: FontWeight.w400,
+                  fontSize: context.responsiveFontSize(16.0),
+                  fontFamily: "Lato",
+                ),
               ),
               SizedBox(height: spacing40),
               // Building Name/Number Field
@@ -361,7 +276,7 @@ class _AddressInputScreenState extends ConsumerState<AddressInputScreen> {
                   });
                 },
               ),
-              SizedBox(height: spacing24),
+              SizedBox(height: spacing16),
               // Street Field
               _buildInputField(
                 label: AppStrings.street,
@@ -373,7 +288,7 @@ class _AddressInputScreenState extends ConsumerState<AddressInputScreen> {
                   });
                 },
               ),
-              SizedBox(height: spacing24),
+              SizedBox(height: spacing16),
               // Pincode Field
               _buildInputField(
                 label: AppStrings.pincode,
@@ -381,22 +296,139 @@ class _AddressInputScreenState extends ConsumerState<AddressInputScreen> {
                 focusNode: _pincodeFocusNode,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                maxLength: 6,
+                maxLength: AppSizes.maxLengthPincode,
                 onChanged: (value) {
                   setState(() {
                     _pincode = value.trim();
                   });
                 },
               ),
-              SizedBox(height: spacing8),
+              //  SizedBox(height: spacing8),
               // Helper text
               Text(
                 AppStrings.putYourDetailedAddress,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textTertiary,
+                  fontSize: context.responsiveFontSize(12.0),
+                  fontFamily: 'Lato',
+                ),
+              ),
+              SizedBox(height: spacing24),
+              // Address Type Dropdown
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Choose your kitchen',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: context.responsiveFontSize(14.0),
+                          fontFamily: 'Lato',
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.spacing4),
+                      Text(
+                        '*',
+                        style: TextStyle(
+                          color: AppColors.errorColor,
+                          fontSize: context.responsiveFontSize(AppTypography.fontSize16),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: spacing8),
+                  DropdownButtonFormField<String>(
+                    value: _selectedAddressType,
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppColors.textSecondary,
+                    ),
+                    dropdownColor: Colors.white,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontSize: context.responsiveFontSize(14.0),
+                      fontFamily: 'Lato',
+                      color: AppColors.textPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Select nearest kitchen',
+                      hintStyle: TextStyle(
+                        fontSize: context.responsiveFontSize(14.0),
+                        color: AppColors.textSecondary,
+                        fontFamily: 'Lato',
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: context.responsiveSpacing(16.0),
+                        vertical: context.responsiveSpacing(12.0),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          context.responsiveSpacing(4.0),
+                        ),
+                        borderSide: const BorderSide(
+                          color: AppColors.borderColor,
+                          width: AppSizes.borderMedium,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          context.responsiveSpacing(4.0),
+                        ),
+                        borderSide: const BorderSide(
+                          color: AppColors.primaryGreen,
+                          width: AppSizes.borderMedium,
+                        ),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedAddressType = value;
+                      });
+                    },
+                    items: _addressTypes
+                        .map(
+                          (t) => DropdownMenuItem<String>(
+                            value: t['label'] as String,
+                            child: Row(
+                              children: [
+                                Icon(
+                                  t['icon'] as IconData,
+                                  color: AppColors.primaryGreen,
+                                  size: context.responsiveFontSize(20.0),
+                                ),
+                                SizedBox(
+                                  width: context.responsiveSpacing(12.0),
+                                ),
+                                Text(
+                                  t['label'] as String,
+                                  style: Theme.of(context).textTheme.bodyLarge
+                                      ?.copyWith(
+                                        fontSize: context.responsiveFontSize(
+                                          16.0,
+                                        ),
+                                        fontFamily: 'Lato',
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  SizedBox(height: spacing8),
+                  Text(
+                    "Select your nearest Fitkhao kitchen to get fatest delivery",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppColors.textTertiary,
                       fontSize: context.responsiveFontSize(12.0),
                       fontFamily: 'Lato',
                     ),
+                  ),
+                ],
               ),
               SizedBox(height: spacing24),
               // Continue Button
@@ -405,19 +437,19 @@ class _AddressInputScreenState extends ConsumerState<AddressInputScreen> {
                 textColor: Colors.white,
                 onPressed: _isFormValid ? _handleContinue : null,
                 isLoading: false,
-                height: 50.0,
+                height: AppSizes.buttonHeight,
                 disabledBackgroundColor: const Color(0xFFA0D488),
               ),
               SizedBox(height: spacing16),
               // Locate on Map Button
               PrimaryButton(
-                height: 50,
+                height: AppSizes.buttonHeight,
                 text: AppStrings.locateOnMap,
-                onPressed: !_isLoadingLocation ? _handleLocateOnMap : null,
+                onPressed: !_isNavigatingToMap ? _handleLocateOnMap : null,
                 textColor: AppColors.textWhite,
                 backgroundColor: Color(0XFF5D9E40),
-                borderRadius: 4.0,
-                isLoading: _isLoadingLocation,
+                borderRadius: AppSizes.radius4,
+                isLoading: _isNavigatingToMap,
               ),
             ],
           ),

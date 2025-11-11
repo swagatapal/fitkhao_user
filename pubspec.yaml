@@ -52,9 +52,6 @@ dependencies:
   json_annotation: ^4.9.0
   shared_preferences: ^2.3.5
 
-  # HTTP & API
-  dio: ^5.7.0
-
   # Form Validation
   flutter_hooks: ^0.20.5
 

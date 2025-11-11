@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_sizes.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/utils/responsive_utils.dart';
 
@@ -51,7 +53,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _nextPage() {
     if (_currentIndex < _onboardingData.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: AppSizes.durationFast),
         curve: Curves.easeInOut,
       );
     } else {
@@ -120,10 +122,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: Text(
                             "Skip",
                             style: TextStyle(
-                              fontSize: context.responsiveFontSize(20.0),
-                              fontWeight: FontWeight.w500,
+                              fontSize: context.responsiveFontSize(AppTypography.fontSize20),
+                              fontWeight: AppTypography.medium,
                               color: Colors.white,
-                              fontFamily: 'Lato',
+                              fontFamily: AppTypography.fontFamily,
                             ),
                           ),
                         ),
@@ -135,16 +137,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   GestureDetector(
                     onTap: _nextPage,
                     child: Container(
-                      width: 50,
-                      height: 50,
+                      width: AppSizes.nextButtonSize,
+                      height: AppSizes.nextButtonSize,
                       decoration: BoxDecoration(
                         color: Color(0xFF5D9E40),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppSizes.radius8),
                       ),
                       child: const Icon(
                         Icons.arrow_forward,
                         color: Colors.white,
-                        size: 32,
+                        size: AppSizes.icon32,
                       ),
                     ),
                   ),
@@ -166,8 +168,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         Center(
           child: Image.asset(
             data.image,
-            height: 261,
-            width: 258,
+            height: AppSizes.onboardingImageHeight,
+            width: AppSizes.onboardingImageWidth,
             fit: BoxFit.contain,
           ),
         ),
@@ -180,9 +182,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           child: RichText(
             text: TextSpan(
               style: TextStyle(
-                fontSize: context.responsiveFontSize(60.0),
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Lato',
+                fontSize: context.responsiveFontSize(AppTypography.fontSize60),
+                fontWeight: AppTypography.bold,
+                fontFamily: AppTypography.fontFamily,
                 height: 1.2,
               ),
               children: [
@@ -204,18 +206,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildIndicator(int index) {
     final isActive = _currentIndex == index;
-    final spacing8 = context.responsiveSpacing(8.0);
+    final spacing8 = context.responsiveSpacing(AppSizes.spacing8);
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: AppSizes.durationFast),
       margin: EdgeInsets.symmetric(horizontal: spacing8 / 2),
       width: isActive
           ? context.responsiveSpacing(29.0)
-          : context.responsiveSpacing(12.0),
-      height: context.responsiveSpacing(12.0),
+          : context.responsiveSpacing(AppSizes.spacing12),
+      height: context.responsiveSpacing(AppSizes.spacing12),
       decoration: BoxDecoration(
         color: isActive ? Color(0xFF5D9E40) : const Color(0xFF5C5C5C),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppSizes.radius6),
       ),
     );
   }

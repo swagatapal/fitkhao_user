@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../shared/widgets/logo_widget.dart';
@@ -28,17 +30,17 @@ class _HealthScoreScreenState extends ConsumerState<HealthScoreScreen> {
   Future<void> _handleStartExploring() async {
     final authNotifier = ref.read(authProvider.notifier);
 
-    // Call complete registration API
-    final response = await authNotifier.completeRegistration();
+    // Complete registration
+    final success = await authNotifier.completeRegistration();
 
-    if (response != null && mounted) {
+    if (success && mounted) {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.message),
+        const SnackBar(
+          content: Text('Registration completed successfully!'),
           backgroundColor: AppColors.primaryGreen,
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
+          duration: Duration(seconds: 3),
         ),
       );
 
@@ -118,8 +120,8 @@ class _HealthScoreScreenState extends ConsumerState<HealthScoreScreen> {
               // Score Card with Gradient
               Center(
                 child: Container(
-                  width: 181,
-                  height: 96,
+                  width: AppSizes.scoreCardWidth,
+                  height: AppSizes.scoreCardHeight,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -136,21 +138,21 @@ class _HealthScoreScreenState extends ConsumerState<HealthScoreScreen> {
                           ? Image.asset(
                               "assets/images/red.png",
                               fit: BoxFit.cover,
-                              width: 181,
-                              height: 96,
+                              width: AppSizes.scoreCardWidth,
+                              height: AppSizes.scoreCardHeight,
                             )
                           : widget.scoreLevel == "good"
                           ? Image.asset(
                               "assets/images/green.png",
                               fit: BoxFit.cover,
-                              width: 181,
-                              height: 96,
+                              width: AppSizes.scoreCardWidth,
+                              height: AppSizes.scoreCardHeight,
                             )
                           : Image.asset(
                               "assets/images/yellow.png",
                               fit: BoxFit.cover,
-                              width: 181,
-                              height: 96,
+                              width: AppSizes.scoreCardWidth,
+                              height: AppSizes.scoreCardHeight,
                             ),
                       Center(
                         child: Text(
@@ -200,8 +202,8 @@ class _HealthScoreScreenState extends ConsumerState<HealthScoreScreen> {
                 child: Row(
                   children: [
                     Container(
-                      width: 50,
-                      height: 50,
+                      width: AppSizes.iconContainerSize,
+                      height: AppSizes.iconContainerSize,
                       decoration: const BoxDecoration(
                         color: AppColors.primaryGreen,
                         shape: BoxShape.circle,
@@ -209,7 +211,7 @@ class _HealthScoreScreenState extends ConsumerState<HealthScoreScreen> {
                       child: const Icon(
                         Icons.lightbulb_sharp,
                         color: Colors.white,
-                        size: 28,
+                        size: AppSizes.icon28,
                       ),
                     ),
                     SizedBox(width: spacing16),
@@ -239,7 +241,7 @@ class _HealthScoreScreenState extends ConsumerState<HealthScoreScreen> {
                 isLoading: authState.isLoading,
                 backgroundColor: Colors.white,
                 borderColor: AppColors.primaryGreen,
-                borderWidth: 1.5,
+                borderWidth: AppSizes.borderMedium,
               ),
               SizedBox(height: spacing16),
 

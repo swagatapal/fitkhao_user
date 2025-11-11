@@ -1,10 +1,13 @@
 import 'package:fitkhao_user/features/auth/screens/detailed_health_info_screen.dart';
+import 'package:fitkhao_user/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:fitkhao_user/features/delivery/presentation/screens/delivery_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_sizes.dart';
+import '../../core/constants/app_typography.dart';
 import '../../core/utils/responsive_utils.dart';
-
+import '../history/presentation/screens/history_screen.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
@@ -18,13 +21,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   int _selectedIndex = 0;
 
   // List of screens
-  final List<Widget> _screens =  [
-
-
+  final List<Widget> _screens = [
     DeliveryScreen(),
-    DeliveryScreen(),
+    DashboardScreen(),
     DetailedHealthInfoScreen(),
-    DeliveryScreen()
+    HistoryScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -39,14 +40,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       body: Stack(
         children: [
           // Display the selected screen
-          IndexedStack(
-            index: _selectedIndex,
-            children: _screens,
-          ),
+          IndexedStack(index: _selectedIndex, children: _screens),
 
           // Floating Bottom Navigation Bar
           Positioned(
-            bottom: 0,
+            bottom: AppSizes.spacing20,
             left: 0,
             right: 0,
             child: _buildBottomNavigationBar(context),
@@ -69,14 +67,19 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFFEFF5EC),
-          borderRadius: BorderRadius.circular(context.responsiveSpacing(50.0)),
-          border: Border.all(color: AppColors.primaryGreen, width: 0.5),
+          borderRadius: BorderRadius.circular(
+            context.responsiveSpacing(AppSizes.radius50),
+          ),
+          border: Border.all(
+            color: AppColors.primaryGreen,
+            width: AppSizes.borderThin,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 12,
+              color: Colors.black.withValues(alpha: AppSizes.opacity08),
+              blurRadius: AppSizes.shadowBlur12,
               offset: const Offset(0, 4),
-              spreadRadius: 0,
+              spreadRadius: AppSizes.shadowSpread0,
             ),
           ],
         ),
@@ -90,13 +93,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             children: [
               _buildNavItem(
                 context: context,
-                icon: Icons.delivery_dining,
-                label: 'Delivery',
+                icon: Icons.food_bank_outlined,
+                label: 'Menu',
                 index: 0,
               ),
               _buildNavItem(
                 context: context,
-                icon: Icons.dashboard,
+                icon: Icons.settings_system_daydream_sharp,
                 label: 'Dashboard',
                 index: 1,
               ),
@@ -126,21 +129,25 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     required int index,
   }) {
     final isSelected = _selectedIndex == index;
-    final spacing10 = context.responsiveSpacing(10.0);
+    final spacing8 = context.responsiveSpacing(8.0);
     final spacing4 = context.responsiveSpacing(4.0);
 
     return Expanded(
       child: GestureDetector(
         onTap: () => _onItemTapped(index),
         child: Container(
-          margin: EdgeInsets.symmetric(horizontal: context.responsiveSpacing(4.0)),
+          margin: EdgeInsets.symmetric(
+            horizontal: context.responsiveSpacing(4.0),
+          ),
           padding: EdgeInsets.symmetric(
-            horizontal: spacing10,
-            vertical: spacing10,
+            horizontal: spacing8,
+            vertical: spacing8,
           ),
           decoration: BoxDecoration(
             color: isSelected ? AppColors.primaryGreen : Colors.transparent,
-            borderRadius: BorderRadius.circular(context.responsiveSpacing(30.0)),
+            borderRadius: BorderRadius.circular(
+              context.responsiveSpacing(AppSizes.spacing30),
+            ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -148,19 +155,21 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               Icon(
                 icon,
                 color: isSelected ? Colors.white : AppColors.primaryGreen,
-                size: context.responsiveSpacing(24.0),
+                size: context.responsiveSpacing(AppSizes.icon24),
               ),
               SizedBox(height: spacing4),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: context.responsiveFontSize(12.0),
-                  fontWeight: FontWeight.w500,
+                  fontSize: context.responsiveFontSize(
+                    AppTypography.fontSize12,
+                  ),
+                  fontWeight: AppTypography.medium,
                   color: isSelected ? Colors.white : AppColors.textPrimary,
-                  fontFamily: 'Lato',
+                  fontFamily: AppTypography.fontFamily,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 1,
+                maxLines: AppSizes.maxLines1,
                 overflow: TextOverflow.ellipsis,
               ),
             ],

@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/app_typography.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/responsive_utils.dart';
 import '../../../../shared/widgets/primary_button.dart';
@@ -57,32 +59,24 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   }
 
   Future<void> _fetchUserData() async {
-    // Get phone number from auth state
+    // Get user data from auth state
     final authState = ref.read(authProvider);
 
     if (authState.phoneNumber.isNotEmpty) {
-      final response = await ref.read(authProvider.notifier).getUserByPhone(
-        authState.phoneNumber,
-      );
+      setState(() {
+        _name = authState.name;
+        _phoneNumber = authState.phoneNumber;
+        _building = authState.buildingNameNumber;
+        _street = authState.street;
+        _pincode = authState.pincode;
 
-      if (response != null && response.data != null) {
-        final user = response.data!.user;
-
-        setState(() {
-          _name = user.name ?? '';
-          _phoneNumber = user.phoneNumber;
-          _building = user.buildingNameNumber ?? '';
-          _street = user.street ?? '';
-          _pincode = user.pincode ?? '';
-
-          // Update controllers
-          _nameController.text = _name;
-          _phoneController.text = _phoneNumber;
-          _buildingController.text = _building;
-          _streetController.text = _street;
-          _pincodeController.text = _pincode;
-        });
-      }
+        // Update controllers
+        _nameController.text = _name;
+        _phoneController.text = _phoneNumber;
+        _buildingController.text = _building;
+        _streetController.text = _street;
+        _pincodeController.text = _pincode;
+      });
     }
   }
 
@@ -103,19 +97,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   bool get _isFormValid {
     return _name.isNotEmpty &&
-        _phoneNumber.length == 10 &&
+        _phoneNumber.length == AppSizes.maxLengthPhone &&
         _building.isNotEmpty &&
         _street.isNotEmpty &&
-        _pincode.length == 6;
+        _pincode.length == AppSizes.maxLengthPincode;
   }
 
   Future<void> _pickImage() async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
+        maxWidth: AppSizes.imageMaxWidth.toDouble(),
+        maxHeight: AppSizes.imageMaxHeight.toDouble(),
+        imageQuality: AppSizes.imageQuality,
       );
 
       if (pickedFile != null) {
@@ -144,17 +138,17 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       longitude: authState.longitude,
     );
 
-    // Call the complete registration API to update user info
-    final response = await authNotifier.completeRegistration();
+    // Save user profile information
+    final success = await authNotifier.completeRegistration();
 
-    if (response != null && mounted) {
+    if (success && mounted) {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.message),
+        const SnackBar(
+          content: Text('Profile updated successfully!'),
           backgroundColor: AppColors.primaryGreen,
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
+          duration: Duration(seconds: 3),
         ),
       );
 
@@ -198,7 +192,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               children: [
                 Container(
                   width: double.infinity,
-                  height: 60,
+                  height: AppSizes.headerHeight,
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
                       colors: [Color(0xFF5D9E40), Color(0xFF4A7D33)],
@@ -209,7 +203,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   child: Image.asset(
                     "assets/images/header_bg.png",
                     width: MediaQuery.of(context).size.width,
-                    height: 60,
+                    height: AppSizes.headerHeight,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -264,8 +258,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         child: Stack(
                           children: [
                             Container(
-                              width: 121,
-                              height: 90,
+                              width: AppSizes.profileImageWidth,
+                              height: AppSizes.profileImageHeight,
                               decoration: BoxDecoration(
                                 color: AppColors.primaryGreen.withValues(
                                   alpha: 0.2,
@@ -302,7 +296,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                     shape: BoxShape.circle,
                                     border: Border.all(
                                       color: AppColors.primaryGreen,
-                                      width: 2,
+                                      width: AppSizes.borderThick,
                                     ),
                                   ),
                                   child: Icon(
@@ -328,7 +322,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         onChanged: (value) => setState(() => _name = value),
                         suffixIcon: _name.isNotEmpty
                             ? IconButton(
-                                icon: const Icon(Icons.clear, size: 20),
+                                icon: const Icon(Icons.clear, size: AppSizes.icon20),
                                 onPressed: () {
                                   _nameController.clear();
                                   setState(() => _name = '');
@@ -482,12 +476,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           borderRadius: BorderRadius.circular(context.responsiveSpacing(4.0)),
           borderSide: const BorderSide(
             color: AppColors.primaryGreen,
-            width: 1.5,
+            width: AppSizes.borderMedium,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(context.responsiveSpacing(4.0)),
-          borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
+          borderRadius: BorderRadius.circular(context.responsiveSpacing(AppSizes.radius4)),
+          borderSide: const BorderSide(color: AppColors.primaryGreen, width: AppSizes.borderThick),
         ),
       ),
     );
@@ -496,8 +490,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Widget _buildPhoneField() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: AppColors.primaryGreen, width: 1.5),
-        borderRadius: BorderRadius.circular(context.responsiveSpacing(4.0)),
+        border: Border.all(color: AppColors.primaryGreen, width: AppSizes.borderMedium),
+        borderRadius: BorderRadius.circular(context.responsiveSpacing(AppSizes.radius4)),
       ),
       child: Row(
         children: [
@@ -523,8 +517,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
           // Vertical divider
           Container(
-            width: 1,
-            height: context.responsiveSpacing(30.0),
+            width: AppSizes.dividerWidth,
+            height: context.responsiveSpacing(AppSizes.dividerHeightMedium),
             color: AppColors.borderColor,
           ),
 
@@ -536,7 +530,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               keyboardType: TextInputType.phone,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(10),
+                LengthLimitingTextInputFormatter(AppSizes.maxLengthPhone),
               ],
               onChanged: (value) => setState(() => _phoneNumber = value),
               style: TextStyle(

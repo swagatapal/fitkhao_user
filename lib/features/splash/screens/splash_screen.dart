@@ -1,4 +1,5 @@
 import 'package:fitkhao_user/core/constants/app_colors.dart';
+import 'package:fitkhao_user/core/constants/app_sizes.dart';
 import 'package:fitkhao_user/core/constants/app_typography.dart';
 import 'package:fitkhao_user/core/utils/responsive_utils.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +37,7 @@ class _SplashScreenState extends State<SplashScreen>
   void _setupAnimations() {
     // Background fade animation (0-500ms)
     _backgroundController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: AppSizes.durationMedium),
       vsync: this,
     );
 
@@ -46,7 +47,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Logo animation (500-1500ms)
     _logoController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: AppSizes.durationSlow),
       vsync: this,
     );
 
@@ -63,7 +64,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Text animation (1500-2500ms)
     _textController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
+      duration: const Duration(milliseconds: AppSizes.durationSlow),
       vsync: this,
     );
 
@@ -89,7 +90,7 @@ class _SplashScreenState extends State<SplashScreen>
     await _textController.forward();
 
     // Wait a bit before navigating
-    await Future.delayed(const Duration(milliseconds: 1000));
+    await Future.delayed(const Duration(milliseconds: AppSizes.durationSlow));
 
     // Navigate to phone auth screen
     if (mounted) {
@@ -158,13 +159,13 @@ class _SplashScreenState extends State<SplashScreen>
                         scale: _logoScale.value,
                         child: Image.asset(
                           "assets/images/logo_1.png",
-                          width: 100,
-                          height: 81,
+                          width: AppSizes.logoWidth,
+                          height: AppSizes.logoHeight,
                         ),
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSizes.spacing24),
 
                     // Animated fitkhao text
                     SlideTransition(
@@ -176,7 +177,7 @@ class _SplashScreenState extends State<SplashScreen>
                             text: 'fit',
                             style: context.getResponsiveTextStyle(
                               fontSize: context.responsiveFontSize(
-                                40,
+                                AppTypography.fontSize40,
                               ),
                               fontWeight: AppTypography.light,
                               color: AppColors.textWhite,
@@ -187,7 +188,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 text: 'Khao',
                                 style: context.getResponsiveTextStyle(
                                   fontSize: context.responsiveFontSize(
-                                    40,
+                                    AppTypography.fontSize40,
                                   ),
                                   fontWeight: AppTypography.bold,
                                   color: AppColors.textWhite,

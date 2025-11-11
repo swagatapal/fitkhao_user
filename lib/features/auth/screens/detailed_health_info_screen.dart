@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../shared/widgets/primary_button.dart';
@@ -95,17 +97,17 @@ class _DetailedHealthInfoScreenState
       regularityStatus: _capitalize(_regularlyStatus),
     );
 
-    // Call the complete registration API to update user info
-    final response = await authNotifier.completeRegistration();
+    // Complete registration with collected data
+    final success = await authNotifier.completeRegistration();
 
-    if (response != null && mounted) {
+    if (success && mounted) {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.message),
+        const SnackBar(
+          content: Text('Registration completed successfully!'),
           backgroundColor: AppColors.primaryGreen,
           behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
+          duration: Duration(seconds: 3),
         ),
       );
 
@@ -364,13 +366,13 @@ class _DetailedHealthInfoScreenState
             child: GestureDetector(
               onTap: () => context.push(RouteNames.editPersonalProfile),
               child: Container(
-                width: 48,
-                height: 48,
+                width: AppSizes.iconContainerSize,
+                height: AppSizes.iconContainerSize,
                 decoration: BoxDecoration(
                   color: Color(0xFF5D9E40),
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(AppSizes.radius15),
                 ),
-                child: Center(child: Image.asset("assets/images/edit_user.png", height: 16,width: 19,)),
+                child: Center(child: Image.asset("assets/images/edit_user.png", height: AppSizes.icon16, width: AppSizes.icon19)),
               ),
             ),
           ),
@@ -389,7 +391,7 @@ class _DetailedHealthInfoScreenState
           // Green gradient background with pattern
           Container(
             width: double.infinity,
-            height: 150,
+            height: AppSizes.containerHeightLarge,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [Color(0xFF5D9E40), Color(0xFF4A7D33)],
@@ -401,7 +403,7 @@ class _DetailedHealthInfoScreenState
               child: Image.asset(
                 "assets/images/header_bg.png",
                 width: MediaQuery.of(context).size.width,
-                height: 150,
+                height: AppSizes.containerHeightLarge,
                 fit: BoxFit.cover,
               ),
             ),
@@ -409,15 +411,15 @@ class _DetailedHealthInfoScreenState
 
           // Centered food image
           Positioned(
-            top: 60,
+            top: AppSizes.headerHeight,
             left: 0,
             right: 0,
             child: Center(
               child: Container(
-                width: 342,
-                height: 250,
+                width: AppSizes.containerWidthLarge,
+                height: AppSizes.containerHeightXLarge,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppSizes.radius16),
                   color: Colors.transparent
                   // boxShadow: [
                   //   BoxShadow(
@@ -428,7 +430,7 @@ class _DetailedHealthInfoScreenState
                   // ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(AppSizes.radius16),
                   child: Image.network(
                     "https://www.shutterstock.com/image-photo/close-head-shot-portrait-preppy-600nw-1433809418.jpg",
                     fit: BoxFit.cover,
@@ -437,7 +439,7 @@ class _DetailedHealthInfoScreenState
                         color: Colors.grey.shade300,
                         child: Icon(
                           Icons.restaurant,
-                          size: 80,
+                          size: AppSizes.icon80,
                           color: Colors.grey.shade600,
                         ),
                       );
@@ -513,7 +515,7 @@ class _DetailedHealthInfoScreenState
               ),
               borderSide: const BorderSide(
                 color: AppColors.borderColor,
-                width: 1,
+                width: AppSizes.borderNormal,
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -522,7 +524,7 @@ class _DetailedHealthInfoScreenState
               ),
               borderSide: const BorderSide(
                 color: AppColors.primaryGreen,
-                width: 1.5,
+                width: AppSizes.borderMedium,
               ),
             ),
           ),
@@ -576,7 +578,7 @@ class _DetailedHealthInfoScreenState
               ),
               borderSide: const BorderSide(
                 color: AppColors.borderColor,
-                width: 1,
+                width: AppSizes.borderNormal,
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -585,7 +587,7 @@ class _DetailedHealthInfoScreenState
               ),
               borderSide: const BorderSide(
                 color: AppColors.primaryGreen,
-                width: 1.5,
+                width: AppSizes.borderMedium,
               ),
             ),
           ),
@@ -609,7 +611,7 @@ class _DetailedHealthInfoScreenState
           borderRadius: BorderRadius.circular(context.responsiveSpacing(4.0)),
           border: Border.all(
             color: isSelected ? AppColors.primaryGreen : AppColors.borderColor,
-            width: 1.5,
+            width: AppSizes.borderMedium,
           ),
         ),
         child: Row(
@@ -622,17 +624,17 @@ class _DetailedHealthInfoScreenState
               color: isSelected
                   ? AppColors.primaryGreen
                   : AppColors.textSecondary,
-              size: 20,
+              size: AppSizes.icon20,
             ),
-            SizedBox(width: context.responsiveSpacing(12.0)),
+            SizedBox(width: context.responsiveSpacing(AppSizes.spacing12)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    spacing: 10,
+                    spacing: AppSizes.spacing10,
                     children: [
-                      Image.asset("assets/images/user.png", height: 16,width: 16,),
+                      Image.asset("assets/images/user.png", height: AppSizes.icon16, width: AppSizes.icon16),
                       Text(
                         title,
                         style: TextStyle(
@@ -647,9 +649,9 @@ class _DetailedHealthInfoScreenState
                   SizedBox(height: context.responsiveSpacing(4.0)),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 10,
+                    spacing: AppSizes.spacing10,
                     children: [
-                      Image.asset("assets/images/tool.png", height: 16,width: 16,),
+                      Image.asset("assets/images/tool.png", height: AppSizes.icon16, width: AppSizes.icon16),
                       Expanded(
                         child: Text(
                           description,
@@ -690,7 +692,7 @@ class _DetailedHealthInfoScreenState
           borderRadius: BorderRadius.circular(context.responsiveSpacing(8.0)),
           border: Border.all(
             color: isSelected ? AppColors.primaryGreen : AppColors.borderColor,
-            width: 1.5,
+            width: AppSizes.borderMedium,
           ),
         ),
         child: Row(
@@ -699,9 +701,9 @@ class _DetailedHealthInfoScreenState
             Icon(
               icon,
               color: isSelected ? Colors.white : AppColors.primaryGreen,
-              size: 18,
+              size: AppSizes.icon18,
             ),
-            SizedBox(width: context.responsiveSpacing(6.0)),
+            SizedBox(width: context.responsiveSpacing(AppSizes.spacing6)),
             Flexible(
               child: Text(
                 label,
@@ -712,7 +714,7 @@ class _DetailedHealthInfoScreenState
                   fontFamily: 'Lato',
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 1,
+                maxLines: AppSizes.maxLines1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -738,7 +740,7 @@ class _DetailedHealthInfoScreenState
           borderRadius: BorderRadius.circular(context.responsiveSpacing(4.0)),
           border: Border.all(
             color: isSelected ? AppColors.primaryGreen : AppColors.borderColor,
-            width: 1.5,
+            width: AppSizes.borderMedium,
           ),
         ),
         child: Row(
@@ -751,11 +753,11 @@ class _DetailedHealthInfoScreenState
               color: isSelected
                   ? AppColors.primaryGreen
                   : AppColors.textSecondary,
-              size: 20,
+              size: AppSizes.icon20,
             ),
-            SizedBox(width: context.responsiveSpacing(12.0)),
-            Icon(icon, color: AppColors.primaryGreen, size: 20),
-            SizedBox(width: context.responsiveSpacing(8.0)),
+            SizedBox(width: context.responsiveSpacing(AppSizes.spacing12)),
+            Icon(icon, color: AppColors.primaryGreen, size: AppSizes.icon20),
+            SizedBox(width: context.responsiveSpacing(AppSizes.spacing8)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -805,23 +807,23 @@ class _DetailedHealthInfoScreenState
         child: Row(
           children: [
             Container(
-              width: 20,
-              height: 20,
+              width: AppSizes.checkboxSize,
+              height: AppSizes.checkboxSize,
               decoration: BoxDecoration(
                 color: isChecked ? AppColors.primaryGreen : Colors.white,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(AppSizes.radius4),
                 border: Border.all(
                   color: isChecked
                       ? AppColors.primaryGreen
                       : AppColors.borderColor,
-                  width: 1.5,
+                  width: AppSizes.borderMedium,
                 ),
               ),
               child: isChecked
-                  ? const Icon(Icons.check, color: Colors.white, size: 14)
+                  ? const Icon(Icons.check, color: Colors.white, size: AppSizes.icon14)
                   : null,
             ),
-            SizedBox(width: context.responsiveSpacing(12.0)),
+            SizedBox(width: context.responsiveSpacing(AppSizes.spacing12)),
             Text(
               label,
               style: TextStyle(
@@ -847,7 +849,7 @@ class _DetailedHealthInfoScreenState
           borderRadius: BorderRadius.circular(context.responsiveSpacing(4.0)),
           border: Border.all(
             color: isSelected ? AppColors.primaryGreen : AppColors.borderColor,
-            width: 1.5,
+            width: AppSizes.borderMedium,
           ),
         ),
         child: Row(
@@ -859,9 +861,9 @@ class _DetailedHealthInfoScreenState
               color: isSelected
                   ? AppColors.primaryGreen
                   : AppColors.textSecondary,
-              size: 20,
+              size: AppSizes.icon20,
             ),
-            SizedBox(width: context.responsiveSpacing(12.0)),
+            SizedBox(width: context.responsiveSpacing(AppSizes.spacing12)),
             Text(
               label,
               style: TextStyle(

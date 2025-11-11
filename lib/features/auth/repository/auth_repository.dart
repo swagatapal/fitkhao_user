@@ -1,82 +1,95 @@
-import '../../../core/network/api_client.dart';
-import '../../../core/network/api_endpoints.dart';
+import 'package:flutter/material.dart';
 import '../../../core/services/local_storage_service.dart';
 import '../models/otp_request_model.dart';
 import '../models/verify_otp_model.dart';
 
 /// Repository for authentication related operations
+/// Uses local storage and simulated data - no network calls required
 class AuthRepository {
-  final ApiClient _apiClient;
   final LocalStorageService _localStorage;
 
   AuthRepository({
-    required ApiClient apiClient,
     required LocalStorageService localStorage,
-  })  : _apiClient = apiClient,
-        _localStorage = localStorage;
+  }) : _localStorage = localStorage;
 
   /// Send OTP to phone number
   Future<OtpResponseModel> sendOTP({
     required String phoneNumber,
     required String countryCode,
   }) async {
-    final request = OtpRequestModel(
-      phoneNumber: phoneNumber,
-      countryCode: countryCode,
-    );
+    debugPrint('[AuthRepository] Sending OTP...');
+    debugPrint('[AuthRepository] Phone: $countryCode $phoneNumber');
 
-    final response = await _apiClient.post<Map<String, dynamic>>(
-      ApiEndpoints.sendOTP,
-      data: request.toJson(),
-    );
+    // Simulate processing delay
+    await Future.delayed(const Duration(seconds: 2));
 
-    return OtpResponseModel.fromJson(response);
+    // Return success response
+    return const OtpResponseModel(
+      success: true,
+      message: 'OTP sent successfully',
+      otpId: 'otp_id_12345',
+      expiresIn: 300, // 5 minutes
+    );
   }
 
   /// Verify OTP
+  /// Accepts "1234" as valid OTP
   Future<VerifyOtpResponseModel> verifyOTP({
     required String phoneNumber,
     required String countryCode,
     required String otp,
     String? otpId,
   }) async {
-    final request = VerifyOtpRequestModel(
-      phoneNumber: phoneNumber,
-      countryCode: countryCode,
-      otp: otp,
-      otpId: otpId,
-    );
+    debugPrint('[AuthRepository] Verifying OTP...');
+    debugPrint('[AuthRepository] OTP: $otp');
 
-    final response = await _apiClient.post<Map<String, dynamic>>(
-      ApiEndpoints.verifyOTP,
-      data: request.toJson(),
-    );
+    // Simulate processing delay
+    await Future.delayed(const Duration(seconds: 1));
 
-    final otpResponse = VerifyOtpResponseModel.fromJson(response);
+    // Accept "1234" as valid OTP
+    if (otp == '1234') {
+      // Success response
+      final user = UserData(
+        id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+        phoneNumber: phoneNumber,
+        name: 'Test User',
+        email: null,
+        isNewUser: true,
+      );
 
-    // Save tokens and user data to local storage
-    if (otpResponse.success && otpResponse.authToken != null) {
-      await _localStorage.saveAuthToken(otpResponse.authToken!);
-      if (otpResponse.refreshToken != null) {
-        await _localStorage.saveRefreshToken(otpResponse.refreshToken!);
-      }
-      if (otpResponse.user != null) {
-        await _localStorage.saveUserId(otpResponse.user!.id);
-        await _localStorage.saveUserPhone(otpResponse.user!.phoneNumber);
-        if (otpResponse.user!.name != null) {
-          await _localStorage.saveUserName(otpResponse.user!.name!);
-        }
-        if (otpResponse.user!.email != null) {
-          await _localStorage.saveUserEmail(otpResponse.user!.email!);
-        }
+      const authToken = 'auth_token_xyz123';
+      const refreshToken = 'refresh_token_abc456';
+
+      // Save to local storage
+      await _localStorage.saveAuthToken(authToken);
+      await _localStorage.saveRefreshToken(refreshToken);
+      await _localStorage.saveUserId(user.id);
+      await _localStorage.saveUserPhone(user.phoneNumber);
+      if (user.name != null) {
+        await _localStorage.saveUserName(user.name!);
       }
       await _localStorage.setLoggedIn(true);
 
-      // Set auth token in API client
-      _apiClient.setAuthToken(otpResponse.authToken!);
-    }
+      debugPrint('[AuthRepository] OTP verified successfully');
 
-    return otpResponse;
+      return VerifyOtpResponseModel(
+        success: true,
+        message: 'OTP verified successfully',
+        authToken: authToken,
+        refreshToken: refreshToken,
+        user: user,
+      );
+    } else {
+      // Invalid OTP response
+      debugPrint('[AuthRepository] Invalid OTP');
+      return const VerifyOtpResponseModel(
+        success: false,
+        message: 'Invalid OTP. Please try again.',
+        authToken: null,
+        refreshToken: null,
+        user: null,
+      );
+    }
   }
 
   /// Resend OTP
@@ -84,33 +97,23 @@ class AuthRepository {
     required String phoneNumber,
     required String countryCode,
   }) async {
-    final request = OtpRequestModel(
-      phoneNumber: phoneNumber,
-      countryCode: countryCode,
-    );
+    debugPrint('[AuthRepository] Resending OTP...');
 
-    final response = await _apiClient.post<Map<String, dynamic>>(
-      ApiEndpoints.resendOTP,
-      data: request.toJson(),
-    );
+    // Simulate processing delay
+    await Future.delayed(const Duration(seconds: 1));
 
-    return OtpResponseModel.fromJson(response);
+    return const OtpResponseModel(
+      success: true,
+      message: 'OTP resent successfully',
+      otpId: 'otp_id_67890',
+      expiresIn: 300,
+    );
   }
 
   /// Logout user
   Future<void> logout() async {
-    try {
-      // Call logout API
-      await _apiClient.post(ApiEndpoints.logout);
-    } catch (e) {
-      // Continue with local logout even if API fails
-    } finally {
-      // Clear local storage
-      await _localStorage.clearUserData();
-
-      // Remove auth token from API client
-      _apiClient.removeAuthToken();
-    }
+    debugPrint('[AuthRepository] Logging out...');
+    await _localStorage.clearUserData();
   }
 
   /// Check if user is logged in

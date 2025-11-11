@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_sizes.dart';
 import '../../../core/constants/app_strings.dart';
+import '../../../core/constants/app_typography.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/utils/responsive_utils.dart';
 import '../../../shared/widgets/logo_widget.dart';
@@ -21,10 +23,10 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
 
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   final List<TextEditingController> _otpControllers = List.generate(
-    4,
+    AppSizes.maxLengthOTP,
     (_) => TextEditingController(),
   );
-  final List<FocusNode> _otpFocusNodes = List.generate(4, (_) => FocusNode());
+  final List<FocusNode> _otpFocusNodes = List.generate(AppSizes.maxLengthOTP, (_) => FocusNode());
 
   @override
   void initState() {
@@ -59,7 +61,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   void _handleOtpChange(int index, String value) {
     if (value.isNotEmpty) {
       // Move to next field
-      if (index < 3) {
+      if (index < AppSizes.maxLengthOTP - 1) {
         _otpFocusNodes[index + 1].requestFocus();
       } else {
         // Last field - unfocus
@@ -75,20 +77,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   Future<void> _handleConfirm() async {
     final authNotifier = ref.read(authProvider.notifier);
 
-    // Call the register/verify OTP API
-    final response = await authNotifier.verifyOtp();
+    // Verify OTP
+    final success = await authNotifier.verifyOtp();
 
-    if (response != null && mounted) {
-      // Check if it's a new user or existing user
-      if (response.data?.isNewUser == true) {
-        // New user - navigate to name input screen
-        context.go(RouteNames.nameInput);
-      } else {
-        // Existing user - navigate to home screen or dashboard
-        // You can update this navigation based on your app flow
-        context.go(RouteNames.nameInput);
-      }
-    }
+    //if (success && mounted) {
+      // OTP verified successfully - navigate to name input screen
+      context.go(RouteNames.nameInput);
+   // }
     // Error message will be shown automatically via the error listener
   }
 
@@ -215,12 +210,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                       fontFamily: 'Lato',
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSizes.spacing4),
                   Text(
                     '*',
                     style: TextStyle(
                       color: AppColors.errorColor,
-                      fontSize: context.responsiveFontSize(16.0),
+                      fontSize: context.responsiveFontSize(AppTypography.fontSize16),
                     ),
                   ),
                 ],
@@ -229,7 +224,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               // OTP Input Fields
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(4, (index) {
+                children: List.generate(AppSizes.maxLengthOTP, (index) {
                   final hasFocus = _otpFocusNodes[index].hasFocus;
                   final hasValue = _otpControllers[index].text.isNotEmpty;
 
@@ -248,7 +243,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                       focusNode: _otpFocusNodes[index],
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
-                      maxLength: 1,
+                      maxLength: AppSizes.maxLengthOTPDigit,
                       enabled: !authState.isLoading,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       style: Theme.of(context).textTheme.headlineSmall
@@ -269,7 +264,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                           ),
                           borderSide: const BorderSide(
                             color: AppColors.borderColor,
-                            width: 1.5,
+                            width: AppSizes.borderMedium,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
@@ -278,7 +273,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                           ),
                           borderSide: const BorderSide(
                             color: AppColors.primaryGreen,
-                            width: 1.5,
+                            width: AppSizes.borderMedium,
                           ),
                         ),
                       ),
@@ -304,17 +299,17 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
               PrimaryButton(
                 text: AppStrings.confirm,
                 textColor: Colors.white,
-                onPressed: authState.otp.length == 4 && !authState.isLoading
+                onPressed: authState.otp.length == AppSizes.maxLengthOTP && !authState.isLoading
                     ? _handleConfirm
                     : null,
                 isLoading: authState.isLoading,
-                height: 50.0,
+                height: AppSizes.buttonHeight,
                 disabledBackgroundColor: const Color(0xFFA0D488),
               ),
               SizedBox(height: spacing16),
               // Send Again Button
               PrimaryButton(
-                height: 50,
+                height: AppSizes.buttonHeight,
                 text: AppStrings.sendAgain,
                 onPressed: !authState.isResendingOtp && !authState.isLoading
                     ? _handleResend
