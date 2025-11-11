@@ -52,8 +52,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (state.otp.isEmpty) {
       return 'Please enter OTP';
     }
-    if (state.otp.length != 4) {
-      return 'Please enter complete 4-digit OTP';
+    if (state.otp.length != 6) {
+      return 'Please enter complete 6-digit OTP';
     }
     if (!RegExp(r'^[0-9]+$').hasMatch(state.otp)) {
       return 'OTP should contain only digits';
@@ -101,7 +101,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final response = await _authRepository.sendOTP(
         phoneNumber: state.phoneNumber,
-        countryCode: state.countryCode,
       );
 
       if (response.success) {
@@ -114,6 +113,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         _startResendTimer();
         return true;
       } else {
+        debugPrint('[AuthNotifier] Send OTP failed: '
+            '${response.error?.details ?? response.message}');
         state = state.copyWith(
           isLoading: false,
           errorMessage: response.message,

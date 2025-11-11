@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../core/services/local_storage_service.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/config/app_config.dart';
+import '../../../core/errors/app_exception.dart';
 import '../models/otp_request_model.dart';
 import '../models/verify_otp_model.dart';
 
@@ -7,88 +10,103 @@ import '../models/verify_otp_model.dart';
 /// Uses local storage and simulated data - no network calls required
 class AuthRepository {
   final LocalStorageService _localStorage;
+  final ApiClient _apiClient;
 
   AuthRepository({
     required LocalStorageService localStorage,
-  }) : _localStorage = localStorage;
+    required ApiClient apiClient,
+  })  : _localStorage = localStorage,
+        _apiClient = apiClient;
 
   /// Send OTP to phone number
   Future<OtpResponseModel> sendOTP({
     required String phoneNumber,
-    required String countryCode,
   }) async {
-    debugPrint('[AuthRepository] Sending OTP...');
-    debugPrint('[AuthRepository] Phone: $countryCode $phoneNumber');
+    debugPrint('[AuthRepository] Sending OTP via API...');
+    debugPrint('[AuthRepository] Phone: $phoneNumber');
 
-    // Simulate processing delay
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // API currently expects only `mobileNumber` in body
+      final payload = {
+        'mobileNumber': phoneNumber,
+      };
 
-    // Return success response
-    return const OtpResponseModel(
-      success: true,
-      message: 'OTP sent successfully',
-      otpId: 'otp_id_12345',
-      expiresIn: 300, // 5 minutes
-    );
+      final json = await _apiClient.postJson(
+        AppConfig.sendOtpPath,
+        headers: const {'Content-Type': 'application/json'},
+        body: payload,
+      );
+
+      return OtpResponseModel.fromJson(json);
+    } catch (e) {
+      // Map exceptions to user-friendly messages
+      final message = ExceptionHandler.getErrorMessage(e);
+      throw AuthException(message: message, originalError: e);
+    }
   }
 
-  /// Verify OTP
-  /// Accepts "1234" as valid OTP
+  /// Verify OTP via API
   Future<VerifyOtpResponseModel> verifyOTP({
     required String phoneNumber,
     required String countryCode,
     required String otp,
     String? otpId,
   }) async {
-    debugPrint('[AuthRepository] Verifying OTP...');
-    debugPrint('[AuthRepository] OTP: $otp');
+    debugPrint('[AuthRepository] Verifying OTP via API...');
 
-    // Simulate processing delay
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final payload = {
+        'mobileNumber': phoneNumber,
+        'otp': otp,
+      };
 
-    // Accept "1234" as valid OTP
-    if (otp == '1234') {
-      // Success response
-      final user = UserData(
-        id: 'user_${DateTime.now().millisecondsSinceEpoch}',
-        phoneNumber: phoneNumber,
-        name: 'Test User',
-        email: null,
-        isNewUser: true,
+      final json = await _apiClient.postJson(
+        '/api/auth/verify-otp',
+        headers: const {'Content-Type': 'application/json'},
+        body: payload,
       );
 
-      const authToken = 'auth_token_xyz123';
-      const refreshToken = 'refresh_token_abc456';
+      final success = json['success'] == true;
+      final message = (json['message'] as String?) ?? '';
+      final data = json['data'] as Map<String, dynamic>?;
+      final token = data != null ? data['token'] as String? : null;
+      final user = data != null ? data['user'] as Map<String, dynamic>? : null;
+      final userId = user != null ? (user['id'] as String?) : null;
+      final userMobile = user != null ? (user['mobileNumber'] as String?) : null;
 
-      // Save to local storage
-      await _localStorage.saveAuthToken(authToken);
-      await _localStorage.saveRefreshToken(refreshToken);
-      await _localStorage.saveUserId(user.id);
-      await _localStorage.saveUserPhone(user.phoneNumber);
-      if (user.name != null) {
-        await _localStorage.saveUserName(user.name!);
+      if (success) {
+        // Persist
+        if (token != null) {
+          await _localStorage.saveAuthToken(token);
+        }
+        if (userId != null) {
+          await _localStorage.saveUserId(userId);
+        }
+        if (userMobile != null) {
+          await _localStorage.saveUserPhone(userMobile);
+        }
+        await _localStorage.setLoggedIn(true);
       }
-      await _localStorage.setLoggedIn(true);
 
-      debugPrint('[AuthRepository] OTP verified successfully');
-
+      // Map to existing model shape for app usage
       return VerifyOtpResponseModel(
-        success: true,
-        message: 'OTP verified successfully',
-        authToken: authToken,
-        refreshToken: refreshToken,
-        user: user,
-      );
-    } else {
-      // Invalid OTP response
-      debugPrint('[AuthRepository] Invalid OTP');
-      return const VerifyOtpResponseModel(
-        success: false,
-        message: 'Invalid OTP. Please try again.',
-        authToken: null,
+        success: success,
+        message: message,
+        authToken: token,
         refreshToken: null,
-        user: null,
+        user: user != null
+            ? UserData(
+                id: userId ?? '',
+                phoneNumber: userMobile ?? phoneNumber,
+                name: null,
+                email: null,
+                isNewUser: !(user['isVerified'] as bool? ?? true),
+              )
+            : null,
       );
+    } catch (e) {
+      final message = ExceptionHandler.getErrorMessage(e);
+      throw AuthException(message: message, originalError: e);
     }
   }
 
@@ -97,17 +115,22 @@ class AuthRepository {
     required String phoneNumber,
     required String countryCode,
   }) async {
-    debugPrint('[AuthRepository] Resending OTP...');
+    debugPrint('[AuthRepository] Resending OTP via API...');
 
-    // Simulate processing delay
-    await Future.delayed(const Duration(seconds: 1));
-
-    return const OtpResponseModel(
-      success: true,
-      message: 'OTP resent successfully',
-      otpId: 'otp_id_67890',
-      expiresIn: 300,
-    );
+    try {
+      final payload = {
+        'mobileNumber': phoneNumber,
+      };
+      final json = await _apiClient.postJson(
+        AppConfig.sendOtpPath,
+        headers: const {'Content-Type': 'application/json'},
+        body: payload,
+      );
+      return OtpResponseModel.fromJson(json);
+    } catch (e) {
+      final message = ExceptionHandler.getErrorMessage(e);
+      throw AuthException(message: message, originalError: e);
+    }
   }
 
   /// Logout user

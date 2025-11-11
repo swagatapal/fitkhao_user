@@ -208,7 +208,7 @@ class AppSizes {
 
   // ==================== MAX LENGTHS ====================
   static const int maxLengthPhone = 10;
-  static const int maxLengthOTP = 4;
+  static const int maxLengthOTP = 6;
   static const int maxLengthPincode = 6;
   static const int maxLengthOTPDigit = 1;
   static const int maxLines1 = 1;

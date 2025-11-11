@@ -80,10 +80,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     // Verify OTP
     final success = await authNotifier.verifyOtp();
 
-    //if (success && mounted) {
+    if (success && mounted) {
       // OTP verified successfully - navigate to name input screen
       context.go(RouteNames.nameInput);
-   // }
+    }
     // Error message will be shown automatically via the error listener
   }
 
@@ -146,7 +146,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     final spacing48 = context.responsiveSpacing(48.0);
     final radiusSmall = context.responsiveSpacing(4.0);
 
-    final otpBoxSize = context.isSmallMobile ? 60.0 : 70.0;
+    final otpBoxSize = context.isSmallMobile ? 40.0 : 50.0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -249,14 +249,14 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             fontWeight: FontWeight.w600,
-                            fontSize: context.responsiveFontSize(24.0),
+                            fontSize: context.responsiveFontSize(16.0),
                             fontFamily: 'Lato',
                           ),
                       decoration: InputDecoration(
                         counterText: "",
                         contentPadding: EdgeInsets.symmetric(
-                          horizontal: context.responsiveSpacing(20.0),
-                          vertical: context.responsiveSpacing(16.0),
+                          horizontal: context.responsiveSpacing(10.0),
+                          vertical: context.responsiveSpacing(8.0),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(
@@ -307,11 +307,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 disabledBackgroundColor: const Color(0xFFA0D488),
               ),
               SizedBox(height: spacing16),
-              // Send Again Button
+              // Send Again Button with 60s lockout
               PrimaryButton(
                 height: AppSizes.buttonHeight,
-                text: AppStrings.sendAgain,
-                onPressed: !authState.isResendingOtp && !authState.isLoading
+                text: authState.canResend
+                    ? AppStrings.sendAgain
+                    : '${AppStrings.sendAgain} (00:${authState.resendTimer.toString().padLeft(2, '0')})',
+                onPressed: authState.canResend && !authState.isResendingOtp && !authState.isLoading
                     ? _handleResend
                     : null,
                 textColor: Colors.white,

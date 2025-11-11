@@ -53,6 +53,15 @@ class ProcessingException extends AppException {
   });
 }
 
+/// Network related exceptions
+class NetworkException extends AppException {
+  const NetworkException({
+    required super.message,
+    super.code,
+    super.originalError,
+  });
+}
+
 /// Data not found exceptions
 class NotFoundException extends AppException {
   const NotFoundException({

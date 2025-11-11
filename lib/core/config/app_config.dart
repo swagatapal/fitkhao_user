@@ -7,7 +7,7 @@ class AppConfig {
   static const bool showDebugInfo = true;
 
   /// OTP Configuration
-  static const int otpLength = 4;
+  static const int otpLength = 6;
   static const int otpResendTimerSeconds = 60;
 
   /// Valid OTP for verification
@@ -19,4 +19,8 @@ class AppConfig {
 
   /// App Name
   static const String appName = 'FitKhao';
+
+  /// API
+  static const String baseApiUrl = 'http://10.127.2.1:7071';
+  static const String sendOtpPath = '/api/auth/send-otp';
 }
