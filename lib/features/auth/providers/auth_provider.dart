@@ -309,6 +309,123 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
+  /// Load user profile from API
+  Future<bool> loadProfile() async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    try {
+      final response = await _authRepository.getProfile();
+
+      debugPrint('[AuthNotifier] Profile fetch response: $response');
+
+      // Check if fetch was successful
+      final success = response['success'] == true;
+      final data = response['data'] as Map<String, dynamic>?;
+      final user = data?['user'] as Map<String, dynamic>?;
+      final profile = user?['profile'] as Map<String, dynamic>?;
+
+      if (success && profile != null) {
+        // Extract profile data
+        final name = profile['name'] as String? ?? '';
+        final age = profile['age'] as int? ?? 0;
+        final gender = profile['gender'] as String? ?? 'male';
+        final weight = (profile['weight'] as num?)?.toDouble() ?? 0.0;
+        final height = (profile['height'] as num?)?.toDouble() ?? 0.0;
+        final doesWorkout = profile['doesWorkout'] as bool? ?? false;
+        final workoutDaysPerWeek = profile['workoutDaysPerWeek'] as int? ?? 0;
+        final workoutHoursPerDay = (profile['workoutHoursPerDay'] as num?)?.toDouble() ?? 0.0;
+        final exerciseType = profile['exerciseType'] as String? ?? 'type-1';
+        final profession = profile['profession'] as String? ?? 'type-1';
+        final selectedGoal = profile['selectedGoal'] as String? ?? 'regular-bmi-maintenance';
+
+        // Calculate date of birth from age (approximate)
+        DateTime? dateOfBirth;
+        if (age > 0) {
+          final now = DateTime.now();
+          dateOfBirth = DateTime(now.year - age, now.month, now.day);
+        }
+
+        // Extract address
+        final address = profile['address'] as Map<String, dynamic>?;
+        final buildingName = address?['buildingName'] as String? ?? '';
+        final street = address?['street'] as String? ?? '';
+        final pincode = address?['pincode'] as String? ?? '';
+        final latitude = (address?['latitude'] as num?)?.toDouble();
+        final longitude = (address?['longitude'] as num?)?.toDouble();
+
+        // Extract special conditions
+        final specialConditions = profile['specialConditions'] as Map<String, dynamic>?;
+        final diabetes = specialConditions?['diabetes'] as bool? ?? false;
+        final hyperTension = specialConditions?['hyperTension'] as bool? ?? false;
+        final cardiacProblem = specialConditions?['cardiacProblem'] as bool? ?? false;
+        final liverIssues = specialConditions?['liverIssues'] as bool? ?? false;
+        final kidneyIssues = specialConditions?['kidneyIssues'] as bool? ?? false;
+        final otherConditions = specialConditions?['other'] as String? ?? '';
+
+        // Extract digestive issues
+        final digestiveIssues = profile['digestiveIssues'] as Map<String, dynamic>?;
+        final regularlyConstipated = digestiveIssues?['regularlyConstipated'] as bool? ?? false;
+        final diarrhoeal = digestiveIssues?['diarrhoeal'] as bool? ?? false;
+        final both = digestiveIssues?['both'] as bool? ?? false;
+        final none = digestiveIssues?['none'] as bool? ?? false;
+
+        // Map digestive issues to regularityStatus
+        String regularityStatus = 'None';
+        if (both) {
+          regularityStatus = 'Both';
+        } else if (regularlyConstipated) {
+          regularityStatus = 'Constipated';
+        } else if (diarrhoeal) {
+          regularityStatus = 'Diarrhoeal';
+        }
+
+        // Update state with fetched data
+        state = state.copyWith(
+          name: name,
+          gender: gender,
+          dateOfBirth: dateOfBirth,
+          height: height > 0 ? height : null,
+          weight: weight > 0 ? weight : null,
+          doesExercise: doesWorkout,
+          exerciseDaysPerWeek: workoutDaysPerWeek > 0 ? workoutDaysPerWeek : null,
+          exerciseDurationHours: workoutHoursPerDay > 0 ? workoutHoursPerDay : null,
+          exerciseType: exerciseType,
+          physicalActivityLevel: selectedGoal,
+          buildingNameNumber: buildingName,
+          street: street,
+          pincode: pincode,
+          latitude: latitude,
+          longitude: longitude,
+          diabetes: diabetes,
+          hypertension: hyperTension,
+          cardiacProblem: cardiacProblem,
+          kidneyDisease: kidneyIssues,
+          liverRelatedProblem: liverIssues,
+          otherConditions: otherConditions,
+          regularityStatus: regularityStatus,
+          isLoading: false,
+          errorMessage: null,
+        );
+
+        debugPrint('[AuthNotifier] Profile loaded successfully');
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: 'Failed to load profile data.',
+        );
+        return false;
+      }
+    } catch (e) {
+      debugPrint('[AuthNotifier] Profile load error: $e');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      );
+      return false;
+    }
+  }
+
   /// Complete registration with all collected data
   /// Calls PUT API to update user profile
   Future<bool> completeRegistration() async {

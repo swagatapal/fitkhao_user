@@ -155,6 +155,40 @@ class AuthRepository {
     return _localStorage.getUserPhone();
   }
 
+  /// Get user profile
+  Future<Map<String, dynamic>> getProfile() async {
+    debugPrint('[AuthRepository] Fetching user profile via API...');
+
+    try {
+      // Get auth token
+      final token = getAuthToken();
+      if (token == null || token.isEmpty) {
+        throw AuthException(
+          message: 'Authentication required. Please login again.',
+        );
+      }
+
+      // Prepare headers with Bearer token
+      final headers = {
+        'Authorization': 'Bearer $token',
+      };
+
+      // Make GET request
+      final json = await _apiClient.getJson(
+        AppConfig.updateProfilePath,
+        headers: headers,
+      );
+
+      debugPrint('[AuthRepository] Profile fetch response: $json');
+
+      return json;
+    } catch (e) {
+      debugPrint('[AuthRepository] Profile fetch error: $e');
+      final message = ExceptionHandler.getErrorMessage(e);
+      throw AuthException(message: message, originalError: e);
+    }
+  }
+
   /// Update user profile
   Future<Map<String, dynamic>> updateProfile({
     required ProfileUpdateRequest profileData,

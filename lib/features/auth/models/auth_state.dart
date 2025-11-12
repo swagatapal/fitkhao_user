@@ -82,7 +82,7 @@ class AuthState {
     this.kidneyDisease = false,
     this.liverRelatedProblem = false,
     this.otherConditions = '',
-    this.regularityStatus = 'None',
+    this.regularityStatus='None',
   });
 
   AuthState copyWith({

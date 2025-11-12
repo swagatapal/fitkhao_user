@@ -38,6 +38,42 @@ class ProfileUpdateRequest {
     this.selectedKitchenId,
   });
 
+  /// Map regularityStatus to DigestiveIssues
+  static DigestiveIssues _mapRegularityStatusToDigestiveIssues(String status) {
+    final lower = status.toLowerCase();
+
+    if (lower.contains('both') || (lower.contains('constipat') && lower.contains('diarrh'))) {
+      return const DigestiveIssues(
+        regularlyConstipated: true,
+        diarrhoeal: true,
+        none: false,
+        both: true,
+      );
+    } else if (lower.contains('constipat')) {
+      return const DigestiveIssues(
+        regularlyConstipated: true,
+        diarrhoeal: false,
+        none: false,
+        both: false,
+      );
+    } else if (lower.contains('diarrh')) {
+      return const DigestiveIssues(
+        regularlyConstipated: false,
+        diarrhoeal: true,
+        none: false,
+        both: false,
+      );
+    }
+
+    // Default: None
+    return const DigestiveIssues(
+      regularlyConstipated: false,
+      diarrhoeal: false,
+      none: true,
+      both: false,
+    );
+  }
+
   factory ProfileUpdateRequest.fromAuthState(AuthState s) {
     int? computedAge;
     if (s.dateOfBirth != null) {
@@ -59,13 +95,8 @@ class ProfileUpdateRequest {
       other: (s.otherConditions).trim(),
     );
 
-    // We don't have digestive fields in state; default to none
-    final digestive = const DigestiveIssues(
-      regularlyConstipated: false,
-      diarrhoeal: false,
-      none: true,
-      both: false,
-    );
+    // Map regularityStatus to digestiveIssues
+    final digestive = _mapRegularityStatusToDigestiveIssues(s.regularityStatus);
 
     final addr = Address(
       buildingName: s.buildingNameNumber.isNotEmpty ? s.buildingNameNumber : null,
@@ -84,16 +115,16 @@ class ProfileUpdateRequest {
       gender: s.gender.isNotEmpty ? s.gender : null,
       weight: s.weight,
       height: s.height,
-      selectedGoal: s.physicalActivityLevel, // fallback; change if separate goal is added
+      selectedGoal: "regular-bmi-maintenance", // This is the user's goal (fat-loss, lean-mass-gain, etc)
       doesWorkout: s.doesExercise,
       workoutDaysPerWeek: s.exerciseDaysPerWeek,
       workoutHoursPerDay: s.exerciseDurationHours,
-      exerciseType: s.exerciseType,
-      profession: null, // not captured yet
+      exerciseType: s.exerciseType, // Already in API format (type-1, type-2, type-3)
+      profession: null, // Same as selectedGoal - represents activity level (type-1, type-2, type-3)
       address: addr,
       specialConditions: special,
       digestiveIssues: digestive,
-      selectedKitchenId: null, // not captured yet
+      selectedKitchenId: '', // Empty string as default
     );
   }
 

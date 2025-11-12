@@ -46,6 +46,17 @@ class _DetailedHealthInfoScreenState
   final TextEditingController _otherConditionsController =
       TextEditingController();
 
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load profile data when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfileData();
+    });
+  }
+
   @override
   void dispose() {
     _heightController.dispose();
@@ -54,6 +65,142 @@ class _DetailedHealthInfoScreenState
     _durationController.dispose();
     _otherConditionsController.dispose();
     super.dispose();
+  }
+
+  /// Load profile data from API
+  Future<void> _loadProfileData() async {
+    final authNotifier = ref.read(authProvider.notifier);
+    final success = await authNotifier.loadProfile();
+
+    if (success && mounted) {
+      _populateFormFields();
+    }
+  }
+
+  /// Populate form fields with data from AuthState
+  void _populateFormFields() {
+    final authState = ref.read(authProvider);
+
+    setState(() {
+      // Basic info
+      if (authState.height != null && authState.height! > 0) {
+        _heightCm = authState.height!.toStringAsFixed(0);
+        _heightController.text = _heightCm;
+      }
+      if (authState.weight != null && authState.weight! > 0) {
+        _weightKg = authState.weight!.toStringAsFixed(0);
+        _weightController.text = _weightKg;
+      }
+
+      // Activity level - map from API format (type-1, type-2, type-3) to UI format
+      _activityLevel = _mapProfessionFromApi(authState.physicalActivityLevel);
+
+      // Exercise info
+      _doesExercise = authState.doesExercise;
+      if (authState.exerciseDaysPerWeek != null && authState.exerciseDaysPerWeek! > 0) {
+        _exerciseDaysPerWeek = authState.exerciseDaysPerWeek!.toString();
+        _daysController.text = _exerciseDaysPerWeek;
+      }
+      if (authState.exerciseDurationHours != null && authState.exerciseDurationHours! > 0) {
+        _exerciseDurationHrs = authState.exerciseDurationHours!.toStringAsFixed(0);
+        _durationController.text = _exerciseDurationHrs;
+      }
+
+      // Exercise type - map from API format (type-1, type-2, type-3) to UI format
+      _exerciseType = _mapExerciseTypeFromApi(authState.exerciseType);
+
+      // Health conditions
+      _conditions.clear();
+      if (authState.pregnancy) _conditions.add('pregnancy');
+      if (authState.lactation) _conditions.add('lactation');
+      if (authState.diabetes) _conditions.add('diabetes');
+      if (authState.hypertension) _conditions.add('hypertension');
+      if (authState.cardiacProblem) _conditions.add('cardiac');
+      if (authState.kidneyDisease) _conditions.add('kidney');
+      if (authState.liverRelatedProblem) _conditions.add('liver');
+      if (authState.otherConditions.isNotEmpty) {
+        _conditions.add('others');
+        _otherConditions = authState.otherConditions;
+        _otherConditionsController.text = _otherConditions;
+      }
+
+      // Regularity status
+      _regularlyStatus = authState.regularityStatus.toLowerCase();
+
+      _isInitialized = true;
+    });
+  }
+
+  /// Map profession from API format to UI format
+  /// type-1 → sedentary, type-2 → moderate, type-3 → heavy
+  String _mapProfessionFromApi(String apiValue) {
+    switch (apiValue.toLowerCase()) {
+      case 'type-1':
+        return 'sedentary';
+      case 'type-2':
+        return 'moderate';
+      case 'type-3':
+        return 'heavy';
+      default:
+        // If it's already in UI format or unknown, check if it matches UI values
+        if (apiValue.toLowerCase() == 'sedentary' ||
+            apiValue.toLowerCase() == 'moderate' ||
+            apiValue.toLowerCase() == 'heavy') {
+          return apiValue.toLowerCase();
+        }
+        return 'sedentary'; // default
+    }
+  }
+
+  /// Map profession from UI format to API format
+  /// sedentary → type-1, moderate → type-2, heavy → type-3
+  String _mapProfessionToApi(String uiValue) {
+    switch (uiValue.toLowerCase()) {
+      case 'sedentary':
+        return 'type-1';
+      case 'moderate':
+        return 'type-2';
+      case 'heavy':
+        return 'type-3';
+      default:
+        return 'type-1'; // default
+    }
+  }
+
+  /// Map exercise type from API format to UI format
+  /// type-1 → aerobic, type-2 → strength, type-3 → flexibility
+  String _mapExerciseTypeFromApi(String apiValue) {
+    switch (apiValue.toLowerCase()) {
+      case 'type-1':
+        return 'aerobic';
+      case 'type-2':
+        return 'strength';
+      case 'type-3':
+        return 'flexibility';
+      default:
+        // If it's already in UI format or unknown
+        if (apiValue.toLowerCase() == 'aerobic' ||
+            apiValue.toLowerCase() == 'strength' ||
+            apiValue.toLowerCase() == 'flexibility') {
+          return apiValue.toLowerCase();
+        }
+        return 'aerobic'; // default
+    }
+  }
+
+  /// Map exercise type from UI format to API format
+  /// aerobic → type-1, strength → type-2, flexibility → type-3
+  String _mapExerciseTypeToApi(String uiValue) {
+    switch (uiValue.toLowerCase()) {
+      case 'aerobic':
+        return 'type-1';
+      case 'strength':
+        return 'type-2';
+      case 'flexibility':
+        return 'type-3';
+      default:
+        return 'type-1'; // default
+    }
   }
 
   bool get _isFormValid {
@@ -73,11 +220,15 @@ class _DetailedHealthInfoScreenState
 
     final authNotifier = ref.read(authProvider.notifier);
 
-    // Save detailed health information to provider
+    // Map UI values to API format before saving
+    final professionApiFormat = _mapProfessionToApi(_activityLevel);
+    final exerciseTypeApiFormat = _mapExerciseTypeToApi(_exerciseType);
+
+    // Save detailed health information to provider with API format
     authNotifier.saveDetailedHealthInfo(
       height: double.parse(_heightCm),
       weight: double.parse(_weightKg),
-      physicalActivityLevel: _capitalize(_activityLevel),
+      physicalActivityLevel: professionApiFormat, // Use API format (type-1, type-2, type-3)
       doesExercise: _doesExercise,
       exerciseDaysPerWeek: _doesExercise && _exerciseDaysPerWeek.isNotEmpty
           ? int.parse(_exerciseDaysPerWeek)
@@ -85,7 +236,7 @@ class _DetailedHealthInfoScreenState
       exerciseDurationHours: _doesExercise && _exerciseDurationHrs.isNotEmpty
           ? double.parse(_exerciseDurationHrs)
           : null,
-      exerciseType: _capitalize(_exerciseType),
+      exerciseType: exerciseTypeApiFormat, // Use API format (type-1, type-2, type-3)
       pregnancy: _conditions.contains('pregnancy'),
       lactation: _conditions.contains('lactation'),
       diabetes: _conditions.contains('diabetes'),
@@ -97,14 +248,14 @@ class _DetailedHealthInfoScreenState
       regularityStatus: _capitalize(_regularlyStatus),
     );
 
-    // Complete registration with collected data
+    // Complete registration with collected data (calls PUT API)
     final success = await authNotifier.completeRegistration();
 
     if (success && mounted) {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Registration completed successfully!'),
+          content: Text('Profile updated successfully!'),
           backgroundColor: AppColors.primaryGreen,
           behavior: SnackBarBehavior.floating,
           duration: Duration(seconds: 3),
