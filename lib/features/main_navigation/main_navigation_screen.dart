@@ -1,4 +1,4 @@
-import 'package:fitkhao_user/features/auth/screens/detailed_health_info_screen.dart';
+import 'package:fitkhao_user/features/profile/presentation/screens/detailed_health_info_screen.dart';
 import 'package:fitkhao_user/features/dashboard/presentation/screens/dashboard_screen.dart';
 import 'package:fitkhao_user/features/delivery/presentation/screens/delivery_screen.dart';
 import 'package:flutter/material.dart';

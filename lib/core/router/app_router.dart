@@ -9,7 +9,7 @@ import '../../features/auth/screens/address_input_screen.dart';
 import '../../features/auth/screens/map_picker_screen.dart';
 import '../../features/auth/screens/bmi_analysis_screen.dart';
 import '../../features/auth/screens/health_score_screen.dart';
-import '../../features/auth/screens/detailed_health_info_screen.dart';
+import '../../features/profile/presentation/screens/detailed_health_info_screen.dart';
 import '../../features/main_navigation/main_navigation_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 import '../../features/profile/presentation/screens/preferences_saved_screen.dart';

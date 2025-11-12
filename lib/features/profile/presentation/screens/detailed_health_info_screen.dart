@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/app_sizes.dart';
-import '../../../core/constants/app_strings.dart';
-import '../../../core/constants/app_typography.dart';
-import '../../../core/router/route_names.dart';
-import '../../../core/utils/responsive_utils.dart';
-import '../../../shared/widgets/primary_button.dart';
-import '../models/auth_state.dart';
-import '../providers/auth_provider.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_sizes.dart';
+import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/app_typography.dart';
+import '../../../../core/router/route_names.dart';
+import '../../../../core/utils/responsive_utils.dart';
+import '../../../../shared/widgets/primary_button.dart';
+import '../../../auth/models/auth_state.dart';
+import '../../../auth/providers/auth_provider.dart';
 
 class DetailedHealthInfoScreen extends ConsumerStatefulWidget {
   const DetailedHealthInfoScreen({super.key});

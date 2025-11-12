@@ -21,6 +21,8 @@ class AppConfig {
   static const String appName = 'FitKhao';
 
   /// API
-  static const String baseApiUrl = 'http://10.127.2.1:7071';
+  static const String baseApiUrl = 'http://10.54.111.1:7071';
   static const String sendOtpPath = '/api/auth/send-otp';
+  static const String verifyOtpPath = '/api/auth/verify-otp';
+  static const String updateProfilePath = '/api/user/profile';
 }

@@ -10,6 +10,7 @@ import '../../../core/utils/responsive_utils.dart';
 import '../../../shared/widgets/logo_widget.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../models/auth_state.dart';
+import '../models/profile_update_model.dart';
 import '../providers/auth_provider.dart';
 
 class HealthScoreScreen extends ConsumerStatefulWidget {
@@ -29,6 +30,50 @@ class HealthScoreScreen extends ConsumerStatefulWidget {
 class _HealthScoreScreenState extends ConsumerState<HealthScoreScreen> {
   Future<void> _handleStartExploring() async {
     final authNotifier = ref.read(authProvider.notifier);
+    final authState = ref.read(authProvider);
+
+    // Print all collected data before API call
+    debugPrint('========================================');
+    debugPrint('PROFILE DATA COLLECTED:');
+    debugPrint('========================================');
+    debugPrint('Phone Number: ${authState.phoneNumber}');
+    debugPrint('Name: ${authState.name}');
+    debugPrint('Gender: ${authState.gender}');
+    debugPrint('Date of Birth: ${authState.dateOfBirth}');
+    debugPrint('Height: ${authState.height} cm');
+    debugPrint('Weight: ${authState.weight} kg');
+    debugPrint('Does Exercise: ${authState.doesExercise}');
+    debugPrint('Exercise Days/Week: ${authState.exerciseDaysPerWeek}');
+    debugPrint('Exercise Hours/Day: ${authState.exerciseDurationHours}');
+    debugPrint('Exercise Type: ${authState.exerciseType}');
+    debugPrint('Physical Activity Level: ${authState.physicalActivityLevel}');
+    debugPrint('BMI: ${authState.bmi}');
+    debugPrint('Health Score: ${authState.healthScore}');
+    debugPrint('========================================');
+    debugPrint('ADDRESS:');
+    debugPrint('Building: ${authState.buildingNameNumber}');
+    debugPrint('Street: ${authState.street}');
+    debugPrint('Pincode: ${authState.pincode}');
+    debugPrint('Latitude: ${authState.latitude}');
+    debugPrint('Longitude: ${authState.longitude}');
+    debugPrint('========================================');
+    debugPrint('HEALTH CONDITIONS:');
+    debugPrint('Diabetes: ${authState.diabetes}');
+    debugPrint('Hypertension: ${authState.hypertension}');
+    debugPrint('Cardiac Problem: ${authState.cardiacProblem}');
+    debugPrint('Kidney Disease: ${authState.kidneyDisease}');
+    debugPrint('Liver Problem: ${authState.liverRelatedProblem}');
+    debugPrint('Pregnancy: ${authState.pregnancy}');
+    debugPrint('Lactation: ${authState.lactation}');
+    debugPrint('Other Conditions: ${authState.otherConditions}');
+    debugPrint('Regularity Status: ${authState.regularityStatus}');
+    debugPrint('========================================');
+
+    // Generate profile update model to see what will be sent to API
+    final profileData = ProfileUpdateRequest.fromAuthState(authState);
+    debugPrint('API PAYLOAD:');
+    debugPrint('${profileData.toFullJson()}');
+    debugPrint('========================================');
 
     // Complete registration
     final success = await authNotifier.completeRegistration();

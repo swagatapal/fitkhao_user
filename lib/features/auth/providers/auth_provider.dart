@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/providers.dart';
 import '../models/auth_state.dart';
+import '../models/profile_update_model.dart';
 import '../repository/auth_repository.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -309,7 +310,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Complete registration with all collected data
-  /// Stores data locally - no API calls
+  /// Calls PUT API to update user profile
   Future<bool> completeRegistration() async {
     // Validate all required data is present
     if (state.phoneNumber.isEmpty ||
@@ -329,19 +330,38 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      // Simulate processing delay
-      await Future.delayed(const Duration(seconds: 1));
+      // Create profile update request from current state
+      final profileData = ProfileUpdateRequest.fromAuthState(state);
 
-      // All data is already stored in the state
-      // Mark registration as complete
-      state = state.copyWith(
-        isLoading: false,
-        errorMessage: null,
+      debugPrint('[AuthNotifier] Profile data prepared: ${profileData.toFullJson()}');
+
+      // Call API to update profile
+      final response = await _authRepository.updateProfile(
+        profileData: profileData,
       );
 
-      debugPrint('[AuthNotifier] Registration completed successfully');
-      return true;
+      debugPrint('[AuthNotifier] Profile update API response: $response');
+
+      // Check if update was successful
+      final success = response['success'] == true;
+      final message = response['message'] as String?;
+
+      if (success) {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: null,
+        );
+        debugPrint('[AuthNotifier] Profile updated successfully');
+        return true;
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          errorMessage: message ?? 'Failed to update profile. Please try again.',
+        );
+        return false;
+      }
     } catch (e) {
+      debugPrint('[AuthNotifier] Profile update error: $e');
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll('Exception: ', ''),

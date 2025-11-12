@@ -5,6 +5,7 @@ import '../../../core/config/app_config.dart';
 import '../../../core/errors/app_exception.dart';
 import '../models/otp_request_model.dart';
 import '../models/verify_otp_model.dart';
+import '../models/profile_update_model.dart';
 
 /// Repository for authentication related operations
 /// Uses local storage and simulated data - no network calls required
@@ -152,5 +153,48 @@ class AuthRepository {
   /// Get stored user phone
   String? getUserPhone() {
     return _localStorage.getUserPhone();
+  }
+
+  /// Update user profile
+  Future<Map<String, dynamic>> updateProfile({
+    required ProfileUpdateRequest profileData,
+  }) async {
+    debugPrint('[AuthRepository] Updating user profile via API...');
+
+    try {
+      // Get auth token
+      final token = getAuthToken();
+      if (token == null || token.isEmpty) {
+        throw AuthException(
+          message: 'Authentication required. Please login again.',
+        );
+      }
+
+      // Prepare headers with Bearer token
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
+
+      // Convert profile data to JSON
+      final payload = profileData.toFullJson();
+
+      debugPrint('[AuthRepository] Profile payload: $payload');
+
+      // Make PUT request
+      final json = await _apiClient.putJson(
+        AppConfig.updateProfilePath,
+        headers: headers,
+        body: payload,
+      );
+
+      debugPrint('[AuthRepository] Profile update response: $json');
+
+      return json;
+    } catch (e) {
+      debugPrint('[AuthRepository] Profile update error: $e');
+      final message = ExceptionHandler.getErrorMessage(e);
+      throw AuthException(message: message, originalError: e);
+    }
   }
 }
