@@ -7,6 +7,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../models/menu_item.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/menu_provider.dart';
 import '../widgets/food_detail_popup.dart';
 import 'checkout_screen.dart';
 
@@ -25,12 +26,20 @@ class MenuListScreen extends ConsumerStatefulWidget {
 class _MenuListScreenState extends ConsumerState<MenuListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'All'; // 'All', 'Veg', 'Non-Veg'
-  late List<MenuItem> _menuItems;
 
   @override
   void initState() {
     super.initState();
-    _menuItems = MenuItem.getMockMenuItems();
+    // Load menu items when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMenuItems();
+    });
+  }
+
+  /// Load menu items from API
+  Future<void> _loadMenuItems() async {
+    final menuNotifier = ref.read(menuProvider.notifier);
+    await menuNotifier.loadMenuItems(mealType: widget.mealType);
   }
 
   @override
@@ -65,17 +74,17 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
     }
   }
 
-  List<MenuItem> get _filteredItems {
-    return _menuItems.where((item) {
+  List<MenuItem> _getFilteredItems(List<MenuItem> menuItems) {
+    return menuItems.where((item) {
       if (_selectedFilter == 'Veg' && !item.isVeg) return false;
       if (_selectedFilter == 'Non-Veg' && item.isVeg) return false;
       return true;
     }).toList();
   }
 
-  Map<String, List<MenuItem>> get _itemsByCategory {
+  Map<String, List<MenuItem>> _getItemsByCategory(List<MenuItem> filteredItems) {
     final Map<String, List<MenuItem>> grouped = {};
-    for (var item in _filteredItems) {
+    for (var item in filteredItems) {
       if (!grouped.containsKey(item.category)) {
         grouped[item.category] = [];
       }
@@ -347,28 +356,106 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
   }
 
   Widget _buildMenuCategories() {
-    final categories = _itemsByCategory;
-    if (categories.isEmpty) {
-      return const Center(
+    final menuState = ref.watch(menuProvider);
+
+    return menuState.when(
+      data: (menuItems) {
+        if (menuItems.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppSizes.spacing32),
+              child: Text(
+                'No items available',
+                style: TextStyle(
+                  fontSize: AppTypography.fontSize16,
+                  color: AppColors.textSecondary,
+                  fontFamily: 'Lato',
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Filter items based on selected filter
+        final filteredItems = _getFilteredItems(menuItems);
+
+        // Group by category
+        final categories = _getItemsByCategory(filteredItems);
+
+        if (categories.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppSizes.spacing32),
+              child: Text(
+                'No items match the selected filter',
+                style: TextStyle(
+                  fontSize: AppTypography.fontSize16,
+                  color: AppColors.textSecondary,
+                  fontFamily: 'Lato',
+                ),
+              ),
+            ),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: categories.entries.map((entry) {
+            return _buildCategorySection(entry.key, entry.value);
+          }).toList(),
+        );
+      },
+      loading: () => const Center(
         child: Padding(
           padding: EdgeInsets.all(AppSizes.spacing32),
-          child: Text(
-            'No items available',
-            style: TextStyle(
-              fontSize: AppTypography.fontSize16,
-              color: AppColors.textSecondary,
-              fontFamily: 'Lato',
-            ),
+          child: CircularProgressIndicator(
+            color: AppColors.primaryGreen,
           ),
         ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: categories.entries.map((entry) {
-        return _buildCategorySection(entry.key, entry.value);
-      }).toList(),
+      ),
+      error: (error, stack) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSizes.spacing32),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: AppSizes.icon48,
+                color: AppColors.errorColor,
+              ),
+              const SizedBox(height: AppSizes.spacing16),
+              Text(
+                'Failed to load menu items',
+                style: const TextStyle(
+                  fontSize: AppTypography.fontSize16,
+                  fontWeight: AppTypography.semiBold,
+                  color: AppColors.textPrimary,
+                  fontFamily: 'Lato',
+                ),
+              ),
+              const SizedBox(height: AppSizes.spacing8),
+              Text(
+                error.toString(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: AppTypography.fontSize14,
+                  color: AppColors.textSecondary,
+                  fontFamily: 'Lato',
+                ),
+              ),
+              const SizedBox(height: AppSizes.spacing16),
+              ElevatedButton(
+                onPressed: _loadMenuItems,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -497,6 +584,24 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
                         fontFamily: 'Lato',
                       ),
                     ),
+                    const SizedBox(width: AppSizes.spacing12),
+                    if (item.rating > 0) ...[
+                      const Icon(
+                        Icons.star,
+                        size: AppSizes.icon14,
+                        color: Colors.amber,
+                      ),
+                      const SizedBox(width: AppSizes.spacing4),
+                      Text(
+                        item.rating.toStringAsFixed(1),
+                        style: const TextStyle(
+                          fontSize: AppTypography.fontSize12,
+                          fontWeight: AppTypography.medium,
+                          color: AppColors.textPrimary,
+                          fontFamily: 'Lato',
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: AppSizes.spacing4),

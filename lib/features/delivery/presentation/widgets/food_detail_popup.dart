@@ -78,15 +78,37 @@ class FoodDetailPopup extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSizes.spacing8),
 
-                  // Calories
-                  Text(
-                    '${AppStrings.calories} ${menuItem.calories}kcal',
-                    style: const TextStyle(
-                      fontSize: AppTypography.fontSize16,
-                      fontWeight: AppTypography.medium,
-                      color: AppColors.textSecondary,
-                      fontFamily: 'Lato',
-                    ),
+                  // Calories and Rating
+                  Row(
+                    children: [
+                      Text(
+                        '${AppStrings.calories} ${menuItem.calories}kcal',
+                        style: const TextStyle(
+                          fontSize: AppTypography.fontSize16,
+                          fontWeight: AppTypography.medium,
+                          color: AppColors.textSecondary,
+                          fontFamily: 'Lato',
+                        ),
+                      ),
+                      if (menuItem.rating > 0) ...[
+                        const SizedBox(width: AppSizes.spacing16),
+                        const Icon(
+                          Icons.star,
+                          size: AppSizes.icon16,
+                          color: Colors.amber,
+                        ),
+                        const SizedBox(width: AppSizes.spacing4),
+                        Text(
+                          '${menuItem.rating.toStringAsFixed(1)}/5',
+                          style: const TextStyle(
+                            fontSize: AppTypography.fontSize16,
+                            fontWeight: AppTypography.semiBold,
+                            color: AppColors.textPrimary,
+                            fontFamily: 'Lato',
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: AppSizes.spacing16),
 
@@ -111,7 +133,78 @@ class FoodDetailPopup extends ConsumerWidget {
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: AppSizes.spacing20),
+                  const SizedBox(height: AppSizes.spacing16),
+
+                  // Goal Category
+                  if (menuItem.goalCategory.isNotEmpty) ...[
+                    const Text(
+                      'Goal Category',
+                      style: TextStyle(
+                        fontSize: AppTypography.fontSize16,
+                        fontWeight: AppTypography.semiBold,
+                        color: AppColors.textPrimary,
+                        fontFamily: 'Lato',
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacing8),
+                    Wrap(
+                      spacing: AppSizes.spacing8,
+                      runSpacing: AppSizes.spacing8,
+                      children: menuItem.goalCategory.map((category) {
+                        return _buildChip(
+                          category.replaceAll('-', ' ').split(' ').map((word) =>
+                            word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : word
+                          ).join(' '),
+                          AppColors.primaryGreen,
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: AppSizes.spacing16),
+                  ],
+
+                  // Tags
+                  if (menuItem.tags.isNotEmpty) ...[
+                    const Text(
+                      'Tags',
+                      style: TextStyle(
+                        fontSize: AppTypography.fontSize16,
+                        fontWeight: AppTypography.semiBold,
+                        color: AppColors.textPrimary,
+                        fontFamily: 'Lato',
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacing8),
+                    Wrap(
+                      spacing: AppSizes.spacing8,
+                      runSpacing: AppSizes.spacing8,
+                      children: menuItem.tags.map((tag) {
+                        return _buildChip(tag, AppColors.darkGreen);
+                      }).toList(),
+                    ),
+                    const SizedBox(height: AppSizes.spacing16),
+                  ],
+
+                  // Allergens
+                  if (menuItem.allergens.isNotEmpty) ...[
+                    const Text(
+                      'Allergens',
+                      style: TextStyle(
+                        fontSize: AppTypography.fontSize16,
+                        fontWeight: AppTypography.semiBold,
+                        color: AppColors.textPrimary,
+                        fontFamily: 'Lato',
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacing8),
+                    Wrap(
+                      spacing: AppSizes.spacing8,
+                      runSpacing: AppSizes.spacing8,
+                      children: menuItem.allergens.map((allergen) {
+                        return _buildChip(allergen, AppColors.errorColor);
+                      }).toList(),
+                    ),
+                    const SizedBox(height: AppSizes.spacing16),
+                  ],
 
                   // Nutritional Information
                   Row(
@@ -194,6 +287,32 @@ class FoodDetailPopup extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacing12,
+        vertical: AppSizes.spacing6,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppSizes.radius4),
+        border: Border.all(
+          color: color,
+          width: AppSizes.borderThin,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: AppTypography.fontSize12,
+          fontWeight: AppTypography.medium,
+          color: color,
+          fontFamily: 'Lato',
+        ),
+      ),
     );
   }
 }

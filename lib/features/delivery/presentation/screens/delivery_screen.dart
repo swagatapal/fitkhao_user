@@ -61,7 +61,10 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
     if (authState.street.isNotEmpty) {
       // If street contains comma, get the first part
       final parts = authState.street.split(',');
-      return parts.first.trim();
+      final p2 = authState.pincode;
+      final p3 = authState.buildingNameNumber;
+      //String address =
+      return "${parts.first.trim()}, $p3, $p2";
     }
 
     // Fallback to building name
