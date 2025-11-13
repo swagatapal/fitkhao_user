@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/providers.dart';
 import '../models/auth_state.dart';
 import '../models/profile_update_model.dart';
+import '../models/verify_otp_model.dart';
 import '../repository/auth_repository.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -132,9 +133,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Verify OTP
-  Future<bool> verifyOtp() async {
+  /// Returns VerifyOtpResponseModel on success, null on failure
+  Future<VerifyOtpResponseModel?> verifyOtp() async {
     if (!validateOtpForm()) {
-      return false;
+      return null;
     }
 
     state = state.copyWith(isLoading: true, errorMessage: null);
@@ -151,20 +153,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isLoading: false,
           errorMessage: null,
         );
-        return true;
+        return response;
       } else {
         state = state.copyWith(
           isLoading: false,
           errorMessage: response.message,
         );
-        return false;
+        return null;
       }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         errorMessage: e.toString().replaceAll('Exception: ', ''),
       );
-      return false;
+      return null;
     }
   }
 

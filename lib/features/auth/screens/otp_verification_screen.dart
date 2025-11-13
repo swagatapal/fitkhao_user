@@ -78,11 +78,21 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     final authNotifier = ref.read(authProvider.notifier);
 
     // Verify OTP
-    final success = await authNotifier.verifyOtp();
+    final response = await authNotifier.verifyOtp();
 
-    if (success && mounted) {
-      // OTP verified successfully - navigate to name input screen
-      context.go(RouteNames.nameInput);
+    if (response != null && mounted) {
+      // OTP verified successfully
+      // Check if user has a profile (name exists in profile)
+      final hasProfile = response.user?.name != null &&
+                         response.user!.name!.isNotEmpty;
+
+      if (hasProfile) {
+        // User has completed profile - navigate to home
+        context.go(RouteNames.home);
+      } else {
+        // User needs to complete profile - navigate to name input
+        context.go(RouteNames.nameInput);
+      }
     }
     // Error message will be shown automatically via the error listener
   }

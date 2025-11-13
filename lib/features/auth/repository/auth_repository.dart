@@ -75,6 +75,10 @@ class AuthRepository {
       final userId = user != null ? (user['id'] as String?) : null;
       final userMobile = user != null ? (user['mobileNumber'] as String?) : null;
 
+      // Extract profile name if exists
+      final profile = user != null ? user['profile'] as Map<String, dynamic>? : null;
+      final profileName = profile != null ? (profile['name'] as String?) : null;
+
       if (success) {
         // Persist
         if (token != null) {
@@ -99,7 +103,7 @@ class AuthRepository {
             ? UserData(
                 id: userId ?? '',
                 phoneNumber: userMobile ?? phoneNumber,
-                name: null,
+                name: profileName,
                 email: null,
                 isNewUser: !(user['isVerified'] as bool? ?? true),
               )
