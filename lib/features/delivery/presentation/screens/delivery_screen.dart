@@ -1,4 +1,3 @@
-import 'package:fitkhao_user/core/utils/responsive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -6,6 +5,7 @@ import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../shared/widgets/primary_button.dart';
+import '../../../auth/providers/auth_provider.dart';
 import 'menu_list_screen.dart';
 
 class DeliveryScreen extends ConsumerStatefulWidget {
@@ -18,16 +18,59 @@ class DeliveryScreen extends ConsumerStatefulWidget {
 class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  // Mock data
-  final String userName = 'Tithi';
-  final String userLocation = 'Location';
+  // Mock data for goals (will be replaced with real data later)
   final int todaysGoalKcal = 1100;
   final String selectedGoal = AppStrings.leanMassGain;
+
+  bool _isProfileLoaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Load profile data when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfileData();
+    });
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Load user profile data
+  Future<void> _loadProfileData() async {
+    if (_isProfileLoaded) return;
+
+    final authNotifier = ref.read(authProvider.notifier);
+    await authNotifier.loadProfile();
+
+    if (mounted) {
+      setState(() {
+        _isProfileLoaded = true;
+      });
+    }
+  }
+
+  /// Extract user location from address
+  String _getUserLocation() {
+    final authState = ref.watch(authProvider);
+
+    // Try to get area or street
+    if (authState.street.isNotEmpty) {
+      // If street contains comma, get the first part
+      final parts = authState.street.split(',');
+      return parts.first.trim();
+    }
+
+    // Fallback to building name
+    if (authState.buildingNameNumber.isNotEmpty) {
+      return authState.buildingNameNumber;
+    }
+
+    // Final fallback
+    return 'Location';
   }
 
   @override
@@ -81,7 +124,7 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${AppStrings.greetings} $userName,',
+                '${AppStrings.greetings} ${ref.watch(authProvider).name.isNotEmpty ? ref.watch(authProvider).name : 'User'},',
                 style: const TextStyle(
                   fontSize: AppTypography.fontSize24,
                   fontWeight: AppTypography.bold,
@@ -99,7 +142,7 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
                   ),
                   const SizedBox(width: AppSizes.spacing4),
                   Text(
-                    userLocation,
+                    _getUserLocation(),
                     style: const TextStyle(
                       fontSize: AppTypography.fontSize14,
                       fontWeight: AppTypography.regular,
