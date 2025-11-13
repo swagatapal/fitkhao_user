@@ -26,6 +26,7 @@ class MenuListScreen extends ConsumerStatefulWidget {
 class _MenuListScreenState extends ConsumerState<MenuListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _selectedFilter = 'All'; // 'All', 'Veg', 'Non-Veg'
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -33,6 +34,16 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
     // Load menu items when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadMenuItems();
+    });
+
+    // Add listener to search controller
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  /// Handle search query changes
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
     });
   }
 
@@ -44,6 +55,7 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
@@ -76,8 +88,22 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
 
   List<MenuItem> _getFilteredItems(List<MenuItem> menuItems) {
     return menuItems.where((item) {
+      // Filter by Veg/Non-Veg
       if (_selectedFilter == 'Veg' && !item.isVeg) return false;
       if (_selectedFilter == 'Non-Veg' && item.isVeg) return false;
+
+      // Filter by search query
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        final nameMatch = item.name.toLowerCase().contains(query);
+        final descriptionMatch = item.description.toLowerCase().contains(query);
+        final categoryMatch = item.category.toLowerCase().contains(query);
+
+        if (!nameMatch && !descriptionMatch && !categoryMatch) {
+          return false;
+        }
+      }
+
       return true;
     }).toList();
   }
@@ -91,6 +117,12 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
       grouped[item.category]!.add(item);
     }
     return grouped;
+  }
+
+  /// Refresh menu items from API
+  Future<void> _onRefresh() async {
+    final menuNotifier = ref.read(menuProvider.notifier);
+    await menuNotifier.refresh(mealType: widget.mealType);
   }
 
   @override
@@ -108,25 +140,31 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
               children: [
                 _buildHeader(),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSizes.screenPaddingHorizontal,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: AppSizes.spacing16),
-                          _buildSearchBar(),
-                          const SizedBox(height: AppSizes.spacing16),
-                          _buildFilterButtons(),
-                          const SizedBox(height: AppSizes.spacing20),
-                          _buildMenuCategories(),
-                          const SizedBox(height: AppSizes.spacing32),
-                          // Add spacing for cart bar
-                          if (cartItems.isNotEmpty)
-                            const SizedBox(height: AppSizes.spacing80),
-                        ],
+                  child: RefreshIndicator(
+                    onRefresh: _onRefresh,
+                    color: AppColors.primaryGreen,
+                    backgroundColor: Colors.white,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSizes.screenPaddingHorizontal,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: AppSizes.spacing16),
+                            _buildSearchBar(),
+                            const SizedBox(height: AppSizes.spacing16),
+                            _buildFilterButtons(),
+                            const SizedBox(height: AppSizes.spacing20),
+                            _buildMenuCategories(),
+                            const SizedBox(height: AppSizes.spacing32),
+                            // Add spacing for cart bar
+                            if (cartItems.isNotEmpty)
+                              const SizedBox(height: AppSizes.spacing80),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -253,16 +291,27 @@ class _MenuListScreenState extends ConsumerState<MenuListScreen> {
             color: AppColors.textSecondary,
             size: AppSizes.icon24,
           ),
-          suffixIcon: IconButton(
-            icon: const Icon(
-              Icons.mic,
-              color: AppColors.primaryGreen,
-              size: AppSizes.icon24,
-            ),
-            onPressed: () {
-              // TODO: Implement voice search
-            },
-          ),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(
+                    Icons.clear,
+                    color: AppColors.textSecondary,
+                    size: AppSizes.icon24,
+                  ),
+                  onPressed: () {
+                    _searchController.clear();
+                  },
+                )
+              : IconButton(
+                  icon: const Icon(
+                    Icons.mic,
+                    color: AppColors.primaryGreen,
+                    size: AppSizes.icon24,
+                  ),
+                  onPressed: () {
+                    // TODO: Implement voice search
+                  },
+                ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSizes.spacing16,
