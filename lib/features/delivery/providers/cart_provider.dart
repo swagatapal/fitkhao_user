@@ -1,9 +1,48 @@
+import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/providers.dart';
+import '../../../core/services/local_storage_service.dart';
 import '../models/cart_item.dart';
 import '../models/menu_item.dart';
 
 class CartNotifier extends StateNotifier<List<CartItem>> {
-  CartNotifier() : super([]);
+  final LocalStorageService _localStorage;
+  static const String _cartKey = 'cart_items';
+
+  CartNotifier(this._localStorage) : super([]) {
+    _loadCartFromStorage();
+  }
+
+  /// Load cart items from local storage
+  Future<void> _loadCartFromStorage() async {
+    try {
+      final cartData = _localStorage.getString(_cartKey);
+      if (cartData != null && cartData.isNotEmpty) {
+        final List<dynamic> cartJson = jsonDecode(cartData);
+        final cartItems = cartJson
+            .map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+            .toList();
+        state = cartItems;
+        debugPrint('[CartNotifier] Loaded ${cartItems.length} items from storage');
+      }
+    } catch (e) {
+      debugPrint('[CartNotifier] Error loading cart from storage: $e');
+      state = [];
+    }
+  }
+
+  /// Save cart items to local storage
+  void _saveCartToStorage() {
+    try {
+      final cartJson = state.map((item) => item.toJson()).toList();
+      final cartData = jsonEncode(cartJson);
+      _localStorage.saveString(_cartKey, cartData);
+      debugPrint('[CartNotifier] Saved ${state.length} items to storage');
+    } catch (e) {
+      debugPrint('[CartNotifier] Error saving cart to storage: $e');
+    }
+  }
 
   /// Add item to cart
   void addItem(MenuItem menuItem) {
@@ -22,11 +61,14 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
       // Add new item to cart
       state = [...state, CartItem(menuItem: menuItem, quantity: 1)];
     }
+
+    _saveCartToStorage();
   }
 
   /// Remove item from cart
   void removeItem(String menuItemId) {
     state = state.where((item) => item.menuItem.id != menuItemId).toList();
+    _saveCartToStorage();
   }
 
   /// Update item quantity
@@ -43,11 +85,13 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
       return item;
     }).toList();
     state = updatedList;
+    _saveCartToStorage();
   }
 
   /// Clear cart
   void clearCart() {
     state = [];
+    _saveCartToStorage();
   }
 
   /// Get total items count
@@ -88,7 +132,13 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
 
 /// Provider for cart management
 final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {
-  return CartNotifier();
+  final localStorage = ref.watch(localStorageProvider).value;
+
+  if (localStorage == null) {
+    throw Exception('LocalStorage not initialized');
+  }
+
+  return CartNotifier(localStorage);
 });
 
 /// Provider for total items count
