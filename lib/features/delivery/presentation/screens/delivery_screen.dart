@@ -196,7 +196,7 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
       ),
       child:
       Text(
-        'Available balance : ${wallet?.couponBalance} (${subscription.remainingDays} Days Remaining)',
+        'Available balance : ${wallet?.couponBalance.toStringAsFixed(2)} (${subscription.remainingDays} Days Remaining)',
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: AppTypography.fontSize12,
