@@ -6,6 +6,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/providers/auth_provider.dart';
+import '../../providers/wallet_provider.dart';
 import '../widgets/membership_popup.dart';
 import 'menu_list_screen.dart';
 
@@ -32,7 +33,7 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
     // Load profile data when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadProfileData();
-      _showMembershipPopup();
+      _loadWalletBalance();
     });
   }
 
@@ -56,6 +57,20 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
     }
   }
 
+  /// Load wallet balance and subscription info
+  Future<void> _loadWalletBalance() async {
+    final walletNotifier = ref.read(walletProvider.notifier);
+    await walletNotifier.loadWalletBalance();
+
+    // Show membership popup only if no active subscription
+    if (mounted) {
+      final walletState = ref.read(walletProvider);
+      if (!walletState.hasActiveSubscription) {
+        _showMembershipPopup();
+      }
+    }
+  }
+
   /// Show membership popup on first load
   void _showMembershipPopup() {
     if (!_hasShownMembershipPopup && mounted) {
@@ -75,11 +90,15 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
 
   /// Show membership popup when button is clicked
   void _showMembershipPopupOnDemand() {
+    final walletState = ref.read(walletProvider);
+
     showDialog(
       context: context,
       barrierDismissible: false,
       barrierColor: Colors.transparent,
-      builder: (context) => const MembershipPopup(),
+      builder: (context) => MembershipPopup(
+        subscription: walletState.subscription,
+      ),
     );
   }
 
@@ -123,6 +142,8 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
                   children: [
                     const SizedBox(height: AppSizes.spacing16),
                     _buildHeader(),
+                    const SizedBox(height: AppSizes.spacing8),
+                    _trackSubscription(),
                     const SizedBox(height: AppSizes.spacing16),
                     _buildSearchBar(),
                     const SizedBox(height: AppSizes.spacing12),
@@ -143,6 +164,45 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
               const SizedBox(height: AppSizes.spacing32),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _trackSubscription(){
+    final subscription = ref.watch(walletProvider).subscription;
+    final wallet = ref.watch(walletProvider).wallet;
+    if (subscription == null) return const SizedBox.shrink();
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.spacing12,
+        vertical: AppSizes.spacing6,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4A7C3E), Color(0xFF6BA84F)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppSizes.radius20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child:
+      Text(
+        'Available balance : ${wallet?.couponBalance} (${subscription.remainingDays} Days Remaining)',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: AppTypography.fontSize12,
+          fontWeight: AppTypography.semiBold,
+          color: Colors.white.withValues(alpha: 0.9),
+          fontFamily: 'Lato',
         ),
       ),
     );
@@ -226,14 +286,14 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: AppSizes.spacing8),
+            const SizedBox(height: AppSizes.spacing4),
             // FitKhao Plus Badge
             GestureDetector(
               onTap: _showMembershipPopupOnDemand,
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSizes.spacing12,
-                  vertical: AppSizes.spacing6,
+                  vertical: AppSizes.spacing4,
                 ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -241,7 +301,7 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(AppSizes.radius20),
+                  borderRadius: BorderRadius.circular(AppSizes.radius16),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.primaryGreen.withValues(alpha: 0.3),
@@ -268,6 +328,7 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
                         fontFamily: 'Lato',
                       ),
                     ),
+
                   ],
                 ),
               ),
@@ -346,12 +407,12 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(AppSizes.radius16),
+        borderRadius: BorderRadius.circular(AppSizes.radius8),
       ),
       child: Stack(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(AppSizes.radius16),
+            borderRadius: BorderRadius.circular(AppSizes.radius8),
             child: Image.asset(
               "assets/images/header_bg.png",
               fit: BoxFit.cover,
@@ -469,7 +530,7 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
               ),
               decoration: BoxDecoration(
                 color: const Color(0xFFC66301),
-                borderRadius: BorderRadius.circular(AppSizes.radius12),
+                borderRadius: BorderRadius.circular(AppSizes.radius4),
               ),
               child: const Text(
                 '18th November',

@@ -5,6 +5,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../shared/widgets/logo_widget.dart';
+import '../../providers/wallet_provider.dart';
+import '../widgets/recharge_topup_modal.dart';
 import 'subscription_checkout_screen.dart';
 
 class SubscriptionPlanScreen extends ConsumerStatefulWidget {
@@ -18,6 +20,16 @@ class SubscriptionPlanScreen extends ConsumerStatefulWidget {
 class _SubscriptionPlanScreenState
     extends ConsumerState<SubscriptionPlanScreen> {
   String _selectedPlan = '7'; // '7' or '30' days
+
+  @override
+  void initState() {
+    super.initState();
+    // Load wallet balance to check subscription status
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final walletNotifier = ref.read(walletProvider.notifier);
+      walletNotifier.loadWalletBalance();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +51,59 @@ class _SubscriptionPlanScreenState
                       const SizedBox(height: AppSizes.spacing20),
                       _buildFitKhaoLogo(),
                       const SizedBox(height: AppSizes.spacing16),
+                      // Show active subscription card if exists
+                      if (ref.watch(walletProvider).hasActiveSubscription) ...[
+                        _buildActiveSubscriptionCard(),
+                        const SizedBox(height: AppSizes.spacing16),
+                        // Recharge Top-up button
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => const RechargeTopupModal(),
+                              );
+                            },
+                            icon: const Icon(
+                              Icons.account_balance_wallet,
+                              size: AppSizes.icon20,
+                            ),
+                            label: const Text(
+                              'Recharge Wallet',
+                              style: TextStyle(
+                                fontSize: AppTypography.fontSize16,
+                                fontWeight: AppTypography.semiBold,
+                                fontFamily: 'Lato',
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.primaryGreen,
+                              side: const BorderSide(
+                                color: AppColors.primaryGreen,
+                                width: 2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(AppSizes.radius4),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                vertical: AppSizes.spacing16,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSizes.spacing24),
+                        const Text(
+                          'Upgrade Your Plan',
+                          style: TextStyle(
+                            fontSize: AppTypography.fontSize20,
+                            fontWeight: AppTypography.bold,
+                            color: AppColors.primaryGreen,
+                            fontFamily: 'Lato',
+                          ),
+                        ),
+                        const SizedBox(height: AppSizes.spacing16),
+                      ],
                       _buildPlanCard(
                         days: '7',
                         title: '7 Days Plan',
@@ -319,7 +384,187 @@ class _SubscriptionPlanScreenState
     );
   }
 
+  Widget _buildActiveSubscriptionCard() {
+    final subscription = ref.watch(walletProvider).subscription;
+    final wallet = ref.watch(walletProvider).wallet;
+    if (subscription == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.spacing16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4A7C3E), Color(0xFF6BA84F)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppSizes.radius8),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryGreen.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(AppSizes.spacing8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppSizes.radius8),
+                ),
+                child: Image.asset(
+                  'assets/images/buttonshit_logo.png',
+                  height: AppSizes.icon28,
+                  width: AppSizes.icon28,
+                ),
+              ),
+              const SizedBox(width: AppSizes.spacing12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Current Plan',
+                      style: TextStyle(
+                        fontSize: AppTypography.fontSize12,
+                        fontWeight: AppTypography.medium,
+                        color: Colors.white,
+                        fontFamily: 'Lato',
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacing2),
+                    Text(
+                      subscription.planName,
+                      style: const TextStyle(
+                        fontSize: AppTypography.fontSize16,
+                        fontWeight: AppTypography.semiBold,
+                        color: Colors.white,
+                        fontFamily: 'Lato',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.spacing12,
+                  vertical: AppSizes.spacing6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(AppSizes.radius20),
+                ),
+                child: const Text(
+                  'Active',
+                  style: TextStyle(
+                    fontSize: AppTypography.fontSize12,
+                    fontWeight: AppTypography.bold,
+                    color: Colors.white,
+                    fontFamily: 'Lato',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.spacing12),
+          Container(
+            padding: const EdgeInsets.all(AppSizes.spacing8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppSizes.radius8),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      subscription.formattedPrice,
+                      style: const TextStyle(
+                        fontSize: AppTypography.fontSize16,
+                        fontWeight: AppTypography.semiBold,
+                        color: Colors.white,
+                        fontFamily: 'Lato',
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacing2),
+                    const Text(
+                      'Plan Amount',
+                      style: TextStyle(
+                        fontSize: AppTypography.fontSize12,
+                        fontWeight: AppTypography.regular,
+                        color: Colors.white,
+                        fontFamily: 'Lato',
+                      ),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${subscription.remainingDays}',
+                      style: const TextStyle(
+                        fontSize: AppTypography.fontSize16,
+                        fontWeight: AppTypography.semiBold,
+                        color: Colors.white,
+                        fontFamily: 'Lato',
+                      ),
+                    ),
+                    const SizedBox(height: AppSizes.spacing2),
+                    const Text(
+                      'Days Remaining',
+                      style: TextStyle(
+                        fontSize: AppTypography.fontSize12,
+                        fontWeight: AppTypography.regular,
+                        color: Colors.white,
+                        fontFamily: 'Lato',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSizes.spacing12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Wallet balance is : ",
+                style: const TextStyle(
+                  fontSize: AppTypography.fontSize16,
+                  fontWeight: AppTypography.semiBold,
+                  color: Colors.white,
+                  fontFamily: 'Lato',
+                ),
+              ),
+              Text(
+                wallet?.couponBalance.toString()??"",
+                style: const TextStyle(
+                  fontSize: AppTypography.fontSize16,
+                  fontWeight: AppTypography.semiBold,
+                  color: Colors.white,
+                  fontFamily: 'Lato',
+                ),
+              ),
+            ],
+          )
+
+        ],
+      ),
+    );
+  }
+
   Widget _buildBottomButton() {
+    final hasActiveSubscription = ref.watch(walletProvider).hasActiveSubscription;
+
     return Container(
       padding: const EdgeInsets.all(AppSizes.spacing20),
       decoration: BoxDecoration(
@@ -335,37 +580,59 @@ class _SubscriptionPlanScreenState
       child: SizedBox(
         width: double.infinity,
         height: AppSizes.buttonHeight,
-        child: ElevatedButton(
-          onPressed: () {
-            // Navigate to checkout screen with selected plan details
-            final planPrice = _selectedPlan == '7' ? '₹1999' : '₹7999';
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => SubscriptionCheckoutScreen(
-                  planDays: _selectedPlan,
-                  planPrice: planPrice,
+        child: hasActiveSubscription
+            ? Container(
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppSizes.radius4),
+                  border: Border.all(
+                    color: AppColors.primaryGreen,
+                    width: 2,
+                  ),
+                ),
+                child: const Center(
+                  child: Text(
+                    'You have already active plan',
+                    style: TextStyle(
+                      fontSize: AppTypography.fontSize16,
+                      fontWeight: AppTypography.bold,
+                      color: AppColors.primaryGreen,
+                      fontFamily: 'Lato',
+                    ),
+                  ),
+                ),
+              )
+            : ElevatedButton(
+                onPressed: () {
+                  // Navigate to checkout screen with selected plan details
+                  final planPrice = _selectedPlan == '7' ? '₹1999' : '₹7999';
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SubscriptionCheckoutScreen(
+                        planDays: _selectedPlan,
+                        planPrice: planPrice,
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.radius4),
+                  ),
+                  elevation: 2,
+                ),
+                child: Text(
+                  'Buy $_selectedPlan Days Plan',
+                  style: const TextStyle(
+                    fontSize: AppTypography.fontSize16,
+                    fontWeight: AppTypography.semiBold,
+                    fontFamily: 'Lato',
+                  ),
                 ),
               ),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primaryGreen,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppSizes.radius4),
-            ),
-            elevation: 2,
-          ),
-          child: Text(
-            'Buy $_selectedPlan Days Plan',
-            style: const TextStyle(
-              fontSize: AppTypography.fontSize16,
-              fontWeight: AppTypography.semiBold,
-              fontFamily: 'Lato',
-            ),
-          ),
-        ),
       ),
     );
   }

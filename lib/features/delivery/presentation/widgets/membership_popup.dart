@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../../models/wallet_balance_model.dart';
 import '../screens/subscription_plan_screen.dart';
 
 class MembershipPopup extends StatefulWidget {
-  const MembershipPopup({super.key});
+  final SubscriptionInfo? subscription;
+
+  const MembershipPopup({super.key, this.subscription});
 
   @override
   State<MembershipPopup> createState() => _MembershipPopupState();
@@ -167,61 +170,130 @@ class _MembershipPopupState extends State<MembershipPopup>
                                 ),
                               ),
                               const SizedBox(height: AppSizes.spacing8),
-                              // Subtitle
-                              const Text(
-                                'Unlock Premium Benefits',
-                                style: TextStyle(
-                                  fontSize: AppTypography.fontSize16,
-                                  fontWeight: AppTypography.medium,
-                                  color: Colors.white,
-                                  fontFamily: 'Lato',
-                                ),
-                              ),
-                              const SizedBox(height: AppSizes.spacing24),
-                              // Subscribe button
-                              SizedBox(
-                                width: double.infinity,
-                                height: AppSizes.buttonHeight,
-                                child: ElevatedButton(
-                                  onPressed: () async {
-                                    final navigator = Navigator.of(context);
-                                    await _closePopup();
-                                    if (mounted) {
-                                      navigator.push(
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const SubscriptionPlanScreen(),
+                              // Subtitle or subscription details
+                              if (widget.subscription?.isActive == true) ...[
+                                Container(
+                                  padding: const EdgeInsets.all(AppSizes.spacing16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(AppSizes.radius4),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        "Active Plan : ${widget.subscription!.planName}",
+                                        style: const TextStyle(
+                                          fontSize: AppTypography.fontSize16,
+                                          fontWeight: AppTypography.semiBold,
+                                          color: Colors.white,
+                                          fontFamily: 'Lato',
                                         ),
-                                      );
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: AppColors.primaryGreen,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(
-                                        AppSizes.radius4,
+                                      ),
+                                      Text(
+                                        '( ${widget.subscription!.remainingDays} days remaining )',
+                                        style: const TextStyle(
+                                          fontSize: AppTypography.fontSize14,
+                                          fontWeight: AppTypography.medium,
+                                          color: Colors.white,
+                                          fontFamily: 'Lato',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ] else
+                                const Text(
+                                  'Unlock Premium Benefits',
+                                  style: TextStyle(
+                                    fontSize: AppTypography.fontSize16,
+                                    fontWeight: AppTypography.medium,
+                                    color: Colors.white,
+                                    fontFamily: 'Lato',
+                                  ),
+                                ),
+                              const SizedBox(height: AppSizes.spacing24),
+                              // Subscribe/Subscribed button
+                              if (widget.subscription?.isActive == true)
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: AppSizes.buttonHeight,
+                                  child: ElevatedButton(
+                                    onPressed: ()async{
+                                      final navigator = Navigator.of(context);
+                                      await _closePopup();
+                                      if (mounted) {
+                                        navigator.push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                            const SubscriptionPlanScreen(),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: AppColors.primaryGreen,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppSizes.radius4,
+                                        ),
+                                      ),
+                                      elevation: 4,
+                                    ),
+                                    child: const Text(
+                                      'Subscribed',
+                                      style: TextStyle(
+                                        fontSize: AppTypography.fontSize18,
+                                        fontWeight: AppTypography.bold,
+                                        fontFamily: 'Lato',
                                       ),
                                     ),
-                                    elevation: 4,
                                   ),
-                                  child: const Text(
-                                    'Subscribe Now',
-                                    style: TextStyle(
-                                      fontSize: AppTypography.fontSize18,
-                                      fontWeight: AppTypography.bold,
-                                      fontFamily: 'Lato',
+                                )
+                              else
+                                SizedBox(
+                                  width: double.infinity,
+                                  height: AppSizes.buttonHeight,
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      final navigator = Navigator.of(context);
+                                      await _closePopup();
+                                      if (mounted) {
+                                        navigator.push(
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const SubscriptionPlanScreen(),
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: AppColors.primaryGreen,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(
+                                          AppSizes.radius4,
+                                        ),
+                                      ),
+                                      elevation: 4,
+                                    ),
+                                    child: const Text(
+                                      'Subscribe Now',
+                                      style: TextStyle(
+                                        fontSize: AppTypography.fontSize18,
+                                        fontWeight: AppTypography.bold,
+                                        fontFamily: 'Lato',
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
                               const SizedBox(height: AppSizes.spacing12),
-                              // Skip button
+                              // Close button
                               TextButton(
                                 onPressed: _closePopup,
-                                child: const Text(
-                                  'Maybe Later',
-                                  style: TextStyle(
+                                child: Text(
+                                  widget.subscription?.isActive == true ? 'Close' : 'Maybe Later',
+                                  style: const TextStyle(
                                     fontSize: AppTypography.fontSize14,
                                     fontWeight: AppTypography.medium,
                                     color: Colors.white,
@@ -246,34 +318,4 @@ class _MembershipPopupState extends State<MembershipPopup>
     );
   }
 
-  Widget _buildBenefit(IconData icon, String text) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(AppSizes.spacing8),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(AppSizes.radius8),
-          ),
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: AppSizes.icon20,
-          ),
-        ),
-        const SizedBox(width: AppSizes.spacing12),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(
-              fontSize: AppTypography.fontSize14,
-              fontWeight: AppTypography.medium,
-              color: Colors.white,
-              fontFamily: 'Lato',
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 }

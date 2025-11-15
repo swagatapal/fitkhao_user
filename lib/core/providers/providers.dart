@@ -4,6 +4,7 @@ import '../services/phone_number_service.dart';
 import '../network/api_client.dart';
 import '../../features/auth/repository/auth_repository.dart';
 import '../../features/delivery/repository/subscription_repository.dart';
+import '../../features/delivery/repository/wallet_repository.dart';
 
 /// Provider for LocalStorageService
 final localStorageProvider = FutureProvider<LocalStorageService>((ref) async {
@@ -44,4 +45,17 @@ final subscriptionRepositoryProvider = Provider<SubscriptionRepository>((ref) {
   }
 
   return SubscriptionRepository(apiClient: apiClient, localStorage: localStorage);
+});
+
+/// Provider for WalletRepository
+/// Handles wallet balance and subscription status with remote API
+final walletRepositoryProvider = Provider<WalletRepository>((ref) {
+  final localStorage = ref.watch(localStorageProvider).value;
+  final apiClient = ref.watch(apiClientProvider);
+
+  if (localStorage == null) {
+    throw Exception('LocalStorage not initialized');
+  }
+
+  return WalletRepository(apiClient: apiClient, localStorage: localStorage);
 });

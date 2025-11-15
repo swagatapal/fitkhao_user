@@ -26,4 +26,5 @@ class AppConfig {
   static const String verifyOtpPath = '/api/auth/verify-otp';
   static const String updateProfilePath = '/api/user/profile';
   static const String createSubscriptionPath = '/api/subscription/create';
+  static const String walletTopupPath = '/api/wallet/topup';
 }
