@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../screens/subscription_plan_screen.dart';
 
 class MembershipPopup extends StatefulWidget {
   const MembershipPopup({super.key});
@@ -89,7 +90,7 @@ class _MembershipPopupState extends State<MembershipPopup>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(AppSizes.radius24),
+                      borderRadius: BorderRadius.circular(AppSizes.radius12),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.3),
@@ -176,22 +177,30 @@ class _MembershipPopupState extends State<MembershipPopup>
                                   fontFamily: 'Lato',
                                 ),
                               ),
-                               const SizedBox(height: AppSizes.spacing24),
+                              const SizedBox(height: AppSizes.spacing24),
                               // Subscribe button
                               SizedBox(
                                 width: double.infinity,
                                 height: AppSizes.buttonHeight,
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    // TODO: Implement subscription
-                                    _closePopup();
+                                  onPressed: () async {
+                                    final navigator = Navigator.of(context);
+                                    await _closePopup();
+                                    if (mounted) {
+                                      navigator.push(
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const SubscriptionPlanScreen(),
+                                        ),
+                                      );
+                                    }
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     foregroundColor: AppColors.primaryGreen,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(
-                                        AppSizes.radius8,
+                                        AppSizes.radius4,
                                       ),
                                     ),
                                     elevation: 4,
