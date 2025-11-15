@@ -8,6 +8,7 @@ import '../../../../core/constants/app_typography.dart';
 import '../../../../shared/widgets/logo_widget.dart';
 import '../../models/cart_item.dart';
 import '../../providers/cart_provider.dart';
+import '../../providers/wallet_provider.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
   const CheckoutScreen({super.key});
@@ -422,7 +423,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     double subTotal,
     double deducted,
     double remainingBalance,
-  ) {
+      )
+  {
+    final wallet = ref.watch(walletProvider).wallet;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -486,7 +489,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             children: [
               _buildSummaryRow(
                 AppStrings.couponBalance,
-                '₹${_couponBalance.toInt()}',
+                '₹${wallet?.couponBalance}',
               ),
               const SizedBox(height: AppSizes.spacing8),
               _buildSummaryRow(
@@ -496,7 +499,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               const Divider(height: AppSizes.spacing20),
               _buildSummaryRow(
                 AppStrings.remainingBalance,
-                '₹${remainingBalance.toStringAsFixed(2)}',
+                '₹${(wallet?.couponBalance)!-deducted}',
                 isBold: true,
               ),
             ],
