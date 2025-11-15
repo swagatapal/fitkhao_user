@@ -6,6 +6,7 @@ import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/app_typography.dart';
 import '../../../../shared/widgets/primary_button.dart';
 import '../../../auth/providers/auth_provider.dart';
+import '../widgets/membership_popup.dart';
 import 'menu_list_screen.dart';
 
 class DeliveryScreen extends ConsumerStatefulWidget {
@@ -23,6 +24,7 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
   final String selectedGoal = AppStrings.leanMassGain;
 
   bool _isProfileLoaded = false;
+  bool _hasShownMembershipPopup = false;
 
   @override
   void initState() {
@@ -30,6 +32,7 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
     // Load profile data when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadProfileData();
+      _showMembershipPopup();
     });
   }
 
@@ -51,6 +54,33 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
         _isProfileLoaded = true;
       });
     }
+  }
+
+  /// Show membership popup on first load
+  void _showMembershipPopup() {
+    if (!_hasShownMembershipPopup && mounted) {
+      _hasShownMembershipPopup = true;
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            barrierColor: Colors.transparent,
+            builder: (context) => const MembershipPopup(),
+          );
+        }
+      });
+    }
+  }
+
+  /// Show membership popup when button is clicked
+  void _showMembershipPopupOnDemand() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.transparent,
+      builder: (context) => const MembershipPopup(),
+    );
   }
 
   /// Extract user location from address
@@ -135,7 +165,7 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
                   fontFamily: 'Lato',
                 ),
               ),
-              const SizedBox(height: AppSizes.spacing2),
+              const SizedBox(height: AppSizes.spacing8),
               Row(
                 children: [
                   const Icon(
@@ -175,22 +205,75 @@ class _DeliveryScreenState extends ConsumerState<DeliveryScreen> {
             ],
           ),
         ),
-        CircleAvatar(
-          radius: AppSizes.spacing28,
-          backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.1),
-          backgroundImage: NetworkImage(
-            "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFcyssMbcvEkMiCDu8zrO9VuN-Yy1aW1vycA&s",
-          ),
-          onBackgroundImageError: (exception, stackTrace) {},
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: AppColors.primaryGreen.withValues(alpha: 0.3),
-                width: AppSizes.borderThin,
+        Column(
+          children: [
+
+            // Profile Avatar
+            CircleAvatar(
+              radius: AppSizes.spacing28,
+              backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.1),
+              backgroundImage: const NetworkImage(
+                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFcyssMbcvEkMiCDu8zrO9VuN-Yy1aW1vycA&s",
+              ),
+              onBackgroundImageError: (exception, stackTrace) {},
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                    width: AppSizes.borderThin,
+                  ),
+                ),
               ),
             ),
-          ),
+            const SizedBox(height: AppSizes.spacing8),
+            // FitKhao Plus Badge
+            GestureDetector(
+              onTap: _showMembershipPopupOnDemand,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSizes.spacing12,
+                  vertical: AppSizes.spacing6,
+                ),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4A7C3E), Color(0xFF6BA84F)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(AppSizes.radius20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryGreen.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/buttonshit_logo.png',
+                      height: AppSizes.icon16,
+                      width: AppSizes.icon16,
+                    ),
+                    const SizedBox(width: AppSizes.spacing4),
+                    const Text(
+                      'Plus',
+                      style: TextStyle(
+                        fontSize: AppTypography.fontSize12,
+                        fontWeight: AppTypography.bold,
+                        color: Colors.white,
+                        fontFamily: 'Lato',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          ],
         ),
       ],
     );
