@@ -1,10 +1,10 @@
-import 'package:fitkhao_user/core/utils/responsive_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_sizes.dart';
 import '../../../../core/constants/app_typography.dart';
+import '../../../../core/providers/providers.dart';
 import '../../../../shared/widgets/logo_widget.dart';
 
 class SubscriptionCheckoutScreen extends ConsumerStatefulWidget {
@@ -210,16 +210,47 @@ class _SubscriptionCheckoutScreenState
     );
   }
 
-  void _confirmPayment() {
-    // TODO: Implement actual payment processing
+  Future<void> _confirmPayment() async {
     _showMessage('Processing payment via $_selectedPaymentMethod...');
 
-    // Show success dialog after 2 seconds
-    Future.delayed(const Duration(seconds: 2), () {
+    try {
+      // Get subscription repository
+      final subscriptionRepo = ref.read(subscriptionRepositoryProvider);
+
+      // Determine plan type based on days
+      final planType = widget.planDays == '7' ? 'weekly' : 'monthly';
+
+      // Convert amount to integer
+      final amount = _grandTotal.toInt();
+
+      debugPrint('[SubscriptionCheckout] Creating subscription...');
+      debugPrint('[SubscriptionCheckout] Plan Type: $planType');
+      debugPrint('[SubscriptionCheckout] Amount: $amount');
+
+      // Call API to create subscription
+      final response = await subscriptionRepo.createSubscription(
+        planType: planType,
+        amount: amount,
+      );
+
+      debugPrint('[SubscriptionCheckout] Response: ${response.success}');
+      debugPrint('[SubscriptionCheckout] Message: ${response.message}');
+
       if (mounted) {
-        _showSuccessDialog();
+        if (response.success) {
+          _showSuccessDialog();
+        } else {
+          _showMessage(response.message.isNotEmpty
+            ? response.message
+            : 'Subscription creation failed. Please try again.');
+        }
       }
-    });
+    } catch (e) {
+      debugPrint('[SubscriptionCheckout] Error: $e');
+      if (mounted) {
+        _showMessage('Failed to create subscription. Please try again.');
+      }
+    }
   }
 
   void _showSuccessDialog() {

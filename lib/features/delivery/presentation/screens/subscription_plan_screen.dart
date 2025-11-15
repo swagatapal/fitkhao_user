@@ -42,7 +42,7 @@ class _SubscriptionPlanScreenState
                       _buildPlanCard(
                         days: '7',
                         title: '7 Days Plan',
-                        price: '₹2399',
+                        price: '₹1999',
                         meals: 'Upto 21 meals',
                         subtitle: 'The weekly Kickstart to experience FitKhao',
                       ),
@@ -338,7 +338,7 @@ class _SubscriptionPlanScreenState
         child: ElevatedButton(
           onPressed: () {
             // Navigate to checkout screen with selected plan details
-            final planPrice = _selectedPlan == '7' ? '₹2399' : '₹7999';
+            final planPrice = _selectedPlan == '7' ? '₹1999' : '₹7999';
             Navigator.push(
               context,
               MaterialPageRoute(

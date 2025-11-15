@@ -3,6 +3,7 @@ import '../services/local_storage_service.dart';
 import '../services/phone_number_service.dart';
 import '../network/api_client.dart';
 import '../../features/auth/repository/auth_repository.dart';
+import '../../features/delivery/repository/subscription_repository.dart';
 
 /// Provider for LocalStorageService
 final localStorageProvider = FutureProvider<LocalStorageService>((ref) async {
@@ -30,4 +31,17 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   }
 
   return AuthRepository(localStorage: localStorage, apiClient: apiClient);
+});
+
+/// Provider for SubscriptionRepository
+/// Handles subscription creation with remote API
+final subscriptionRepositoryProvider = Provider<SubscriptionRepository>((ref) {
+  final localStorage = ref.watch(localStorageProvider).value;
+  final apiClient = ref.watch(apiClientProvider);
+
+  if (localStorage == null) {
+    throw Exception('LocalStorage not initialized');
+  }
+
+  return SubscriptionRepository(apiClient: apiClient, localStorage: localStorage);
 });
