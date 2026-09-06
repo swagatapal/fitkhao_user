@@ -16,7 +16,8 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+19
+version: 1.0.0+18
+#android 19
 
 environment:
   sdk: ^3.6.0
@@ -71,23 +72,18 @@ dependencies:
   intl: ^0.20.2
   image_picker: ^1.2.0
   phone_number_hint: ^0.0.6
-  # Pinned to the FlutterFire line that resolves Firebase iOS SDK 11.8.0.
-  # Firebase iOS SDK >= 11.9 is built with Xcode 16.2 and uses Swift 6 syntax
-  # (`sending`, access-level-on-import) that this machine's Xcode 15.4 / Swift
-  # 5.10 cannot parse. Raise these again once Xcode 16.2+ is installed.
-  firebase_core: 3.12.1
-  firebase_analytics: ^11.4.0
-  firebase_messaging: ^15.2.0
+  firebase_core: ^4.3.0
+  firebase_analytics: ^12.1.0
+  firebase_messaging: ^16.1.0
   flutter_local_notifications: ^18.0.1
-  # 1.4.2+ calls RazorpayCheckout.subscribeToAnalyticsEvents, which every
-  # razorpay-core-pod build gates behind `#if compiler(>=5.3) && $NonescapableTypes`
-  # (Swift 6). Under Swift 5.10 the method vanishes from the module interface and
-  # the plugin fails to compile. 1.4.0 is the newest release without that call.
-  razorpay_flutter: 1.4.0
+  razorpay_flutter: ^1.4.4
   cached_network_image: ^3.4.1
   url_launcher: ^6.3.1
   lottie: ^3.3.3
   facebook_app_events: ^0.28.0
+  # iOS App Tracking Transparency. Meta ad attribution needs the IDFA, and
+  # iOS only releases it after the user accepts the ATT prompt.
+  app_tracking_transparency: ^2.0.7
   webview_flutter:
 
 dev_dependencies:

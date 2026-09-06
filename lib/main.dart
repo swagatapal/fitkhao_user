@@ -1,22 +1,16 @@
-import 'package:facebook_app_events/facebook_app_events.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_strings.dart';
 import 'core/services/firebase_notification_service.dart';
+import 'core/services/tracking_consent_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  final fbAppEvents = FacebookAppEvents();
-
-  await fbAppEvents.setAdvertiserTracking(
-    enabled: true,
-  );
 
   // Initialize Firebase
   await Firebase.initializeApp(
@@ -52,6 +46,13 @@ void main() async {
       child: MyApp(),
     ),
   );
+
+  // iOS will not display the ATT prompt until the app is foregrounded with a
+  // frame on screen, so consent has to be resolved after runApp — not before it,
+  // where the old setAdvertiserTracking call used to sit.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    TrackingConsentService.instance.initialise();
+  });
 }
 
 class MyApp extends ConsumerWidget {

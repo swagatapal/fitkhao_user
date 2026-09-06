@@ -59,4 +59,65 @@ post_install do |installer|
       ]
     end
   end
+
+  # ── Vendored xcframework dSYMs ──────────────────────────────────────────────
+  # Xcode unpacks every xcframework belonging to one pod into a single staging
+  # directory (XCFrameworkIntermediates/<pod>/). When a pod vendors more than one
+  # xcframework and each ships its own dSYMs/ folder, the later one REPLACES the
+  # earlier — so razorpay-core-pod loses Razorpay.framework.dSYM to
+  # RazorpayCore.framework.dSYM, and App Store Connect reports the missing UUID.
+  #
+  # Copy the dSYMs into the archive ourselves, straight from the pod, which is
+  # unaffected by the collision.
+  user_project = installer.aggregate_targets.first.user_project
+  runner = user_project.targets.find { |t| t.name == 'Runner' }
+  phase_name = '[FITKHAO] Copy vendored xcframework dSYMs'
+  runner.build_phases.delete_if do |phase|
+    phase.respond_to?(:name) && phase.name == phase_name
+  end
+  phase = runner.new_shell_script_build_phase(phase_name)
+  phase.shell_script = <<~SCRIPT
+    set -euo pipefail
+
+    # Only archives/release builds carry dSYMs.
+    [ "${DEBUG_INFORMATION_FORMAT:-}" = "dwarf-with-dsym" ] || exit 0
+    [ -n "${DWARF_DSYM_FOLDER_PATH:-}" ] || exit 0
+    mkdir -p "${DWARF_DSYM_FOLDER_PATH}"
+
+    # Device and simulator slices ship dSYMs with identical names but different
+    # UUIDs, so pick the slice matching what we are building.
+    if [ "${PLATFORM_NAME}" = "iphonesimulator" ]; then
+      slice_filter="simulator"
+    else
+      slice_filter="device"
+    fi
+
+    find "${PODS_ROOT}" -type d -name '*.framework.dSYM' -path '*.xcframework/*' | while read -r dsym; do
+      case "$dsym" in
+        *-simulator/*) [ "$slice_filter" = "simulator" ] || continue ;;
+        *)             [ "$slice_filter" = "device" ]    || continue ;;
+      esac
+
+      name="$(basename "$dsym")"
+      dest="${DWARF_DSYM_FOLDER_PATH}/${name}"
+      if [ -d "$dest" ]; then continue; fi
+
+      # Only ship a dSYM whose UUID matches a binary actually embedded in the app.
+      binary_name="${name%.framework.dSYM}"
+      embedded="${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/${binary_name}.framework/${binary_name}"
+      [ -f "$embedded" ] || continue
+
+      dwarf="${dsym}/Contents/Resources/DWARF/${binary_name}"
+      [ -f "$dwarf" ] || continue
+      if [ "$(dwarfdump --uuid "$dwarf" | awk '{print $2}' | sort -u)" \
+         != "$(dwarfdump --uuid "$embedded" | awk '{print $2}' | sort -u)" ]; then
+        continue
+      fi
+
+      echo "Copying missing dSYM: ${name}"
+      cp -R "$dsym" "${DWARF_DSYM_FOLDER_PATH}/"
+    done
+  SCRIPT
+  phase.run_only_for_deployment_postprocessing = '0'
+  user_project.save
 end
